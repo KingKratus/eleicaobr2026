@@ -9,8 +9,56 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TestesRouteImport } from './routes/testes'
+import { Route as ResultadosRouteImport } from './routes/resultados'
+import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as MeusBusRouteImport } from './routes/meus-bus'
+import { Route as MapaRouteImport } from './routes/mapa'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as CapturarRouteImport } from './routes/capturar'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TestesRoute = TestesRouteImport.update({
+  id: '/testes',
+  path: '/testes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultadosRoute = ResultadosRouteImport.update({
+  id: '/resultados',
+  path: '/resultados',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeusBusRoute = MeusBusRouteImport.update({
+  id: '/meus-bus',
+  path: '/meus-bus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapaRoute = MapaRouteImport.update({
+  id: '/mapa',
+  path: '/mapa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CapturarRoute = CapturarRouteImport.update({
+  id: '/capturar',
+  path: '/capturar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +67,144 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/capturar': typeof CapturarRoute
+  '/login': typeof LoginRoute
+  '/mapa': typeof MapaRoute
+  '/meus-bus': typeof MeusBusRoute
+  '/perfil': typeof PerfilRoute
+  '/resultados': typeof ResultadosRoute
+  '/testes': typeof TestesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/capturar': typeof CapturarRoute
+  '/login': typeof LoginRoute
+  '/mapa': typeof MapaRoute
+  '/meus-bus': typeof MeusBusRoute
+  '/perfil': typeof PerfilRoute
+  '/resultados': typeof ResultadosRoute
+  '/testes': typeof TestesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/capturar': typeof CapturarRoute
+  '/login': typeof LoginRoute
+  '/mapa': typeof MapaRoute
+  '/meus-bus': typeof MeusBusRoute
+  '/perfil': typeof PerfilRoute
+  '/resultados': typeof ResultadosRoute
+  '/testes': typeof TestesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/capturar'
+    | '/login'
+    | '/mapa'
+    | '/meus-bus'
+    | '/perfil'
+    | '/resultados'
+    | '/testes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/capturar'
+    | '/login'
+    | '/mapa'
+    | '/meus-bus'
+    | '/perfil'
+    | '/resultados'
+    | '/testes'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/capturar'
+    | '/login'
+    | '/mapa'
+    | '/meus-bus'
+    | '/perfil'
+    | '/resultados'
+    | '/testes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  CapturarRoute: typeof CapturarRoute
+  LoginRoute: typeof LoginRoute
+  MapaRoute: typeof MapaRoute
+  MeusBusRoute: typeof MeusBusRoute
+  PerfilRoute: typeof PerfilRoute
+  ResultadosRoute: typeof ResultadosRoute
+  TestesRoute: typeof TestesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/testes': {
+      id: '/testes'
+      path: '/testes'
+      fullPath: '/testes'
+      preLoaderRoute: typeof TestesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resultados': {
+      id: '/resultados'
+      path: '/resultados'
+      fullPath: '/resultados'
+      preLoaderRoute: typeof ResultadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meus-bus': {
+      id: '/meus-bus'
+      path: '/meus-bus'
+      fullPath: '/meus-bus'
+      preLoaderRoute: typeof MeusBusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mapa': {
+      id: '/mapa'
+      path: '/mapa'
+      fullPath: '/mapa'
+      preLoaderRoute: typeof MapaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capturar': {
+      id: '/capturar'
+      path: '/capturar'
+      fullPath: '/capturar'
+      preLoaderRoute: typeof CapturarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +217,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  CapturarRoute: CapturarRoute,
+  LoginRoute: LoginRoute,
+  MapaRoute: MapaRoute,
+  MeusBusRoute: MeusBusRoute,
+  PerfilRoute: PerfilRoute,
+  ResultadosRoute: ResultadosRoute,
+  TestesRoute: TestesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

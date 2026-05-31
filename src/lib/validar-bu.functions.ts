@@ -7,7 +7,7 @@ import { sha512 } from "@noble/hashes/sha512";
 import { parseQRs, hexToBytes } from "./bu-parser";
 
 // noble/ed25519 v3 precisa de SHA-512 sync para alguns hosts
-ed.hashes.sha512 = (m: Uint8Array) => sha512(m);
+(ed.hashes as any).sha512 = (m: Uint8Array) => sha512(m);
 
 const ANO_PRODUCAO = 2026;
 const ANOS_TESTE = [2022, 2024];
@@ -168,7 +168,7 @@ export const validarBU = createServerFn({ method: "POST" })
 
     const { data: inserted, error: dbErr } = await supabaseAdmin
       .from("boletins")
-      .insert(boletim)
+      .insert(boletim as any)
       .select("id")
       .single();
 

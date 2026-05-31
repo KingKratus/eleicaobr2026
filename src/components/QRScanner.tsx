@@ -16,7 +16,7 @@ export function QRScanner({ onComplete, onCancel }: QRScannerProps) {
   const [mode, setMode] = useState<"camera" | "manual">("camera");
   const [manualText, setManualText] = useState("");
   const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (mode !== "camera") return;

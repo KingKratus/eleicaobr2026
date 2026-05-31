@@ -14,16 +14,303 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      boletins: {
+        Row: {
+          ano_eleicao: number
+          assinatura: string
+          assinatura_valida: boolean
+          comparecimento: number | null
+          conteudo_completo: string
+          created_at: string
+          dt_abertura: string | null
+          dt_fechamento: string | null
+          eleitores_aptos: number | null
+          eleitores_faltosos: number | null
+          fase: string
+          hash_final: string
+          hr_abertura: string | null
+          hr_fechamento: string | null
+          id: string
+          id_carga: string | null
+          id_ue: string | null
+          modo_teste: boolean
+          motivo_rejeicao: string | null
+          municipio_nome: string | null
+          municipio_num: number
+          num_turno: number
+          origem: string | null
+          pleito: number | null
+          proc_eleitoral: number | null
+          qr_raw: Json
+          secao: number
+          sigla_uf: string
+          status: string
+          user_id: string | null
+          validado_em: string | null
+          validado_por: string | null
+          versao_chave: string
+          versao_software: string | null
+          votos: Json | null
+          zona: number
+        }
+        Insert: {
+          ano_eleicao: number
+          assinatura: string
+          assinatura_valida?: boolean
+          comparecimento?: number | null
+          conteudo_completo: string
+          created_at?: string
+          dt_abertura?: string | null
+          dt_fechamento?: string | null
+          eleitores_aptos?: number | null
+          eleitores_faltosos?: number | null
+          fase: string
+          hash_final: string
+          hr_abertura?: string | null
+          hr_fechamento?: string | null
+          id?: string
+          id_carga?: string | null
+          id_ue?: string | null
+          modo_teste?: boolean
+          motivo_rejeicao?: string | null
+          municipio_nome?: string | null
+          municipio_num?: number
+          num_turno?: number
+          origem?: string | null
+          pleito?: number | null
+          proc_eleitoral?: number | null
+          qr_raw: Json
+          secao: number
+          sigla_uf: string
+          status?: string
+          user_id?: string | null
+          validado_em?: string | null
+          validado_por?: string | null
+          versao_chave: string
+          versao_software?: string | null
+          votos?: Json | null
+          zona: number
+        }
+        Update: {
+          ano_eleicao?: number
+          assinatura?: string
+          assinatura_valida?: boolean
+          comparecimento?: number | null
+          conteudo_completo?: string
+          created_at?: string
+          dt_abertura?: string | null
+          dt_fechamento?: string | null
+          eleitores_aptos?: number | null
+          eleitores_faltosos?: number | null
+          fase?: string
+          hash_final?: string
+          hr_abertura?: string | null
+          hr_fechamento?: string | null
+          id?: string
+          id_carga?: string | null
+          id_ue?: string | null
+          modo_teste?: boolean
+          motivo_rejeicao?: string | null
+          municipio_nome?: string | null
+          municipio_num?: number
+          num_turno?: number
+          origem?: string | null
+          pleito?: number | null
+          proc_eleitoral?: number | null
+          qr_raw?: Json
+          secao?: number
+          sigla_uf?: string
+          status?: string
+          user_id?: string | null
+          validado_em?: string | null
+          validado_por?: string | null
+          versao_chave?: string
+          versao_software?: string | null
+          votos?: Json | null
+          zona?: number
+        }
+        Relationships: []
+      }
+      chaves_tse: {
+        Row: {
+          ano_eleicao: number
+          ativo: boolean
+          chave_publica_hex: string
+          created_at: string
+          fase: string
+          id: number
+          sigla_uf: string
+          tipo_eleicao: string
+          versao_chave: string
+        }
+        Insert: {
+          ano_eleicao: number
+          ativo?: boolean
+          chave_publica_hex: string
+          created_at?: string
+          fase: string
+          id?: number
+          sigla_uf: string
+          tipo_eleicao: string
+          versao_chave: string
+        }
+        Update: {
+          ano_eleicao?: number
+          ativo?: boolean
+          chave_publica_hex?: string
+          created_at?: string
+          fase?: string
+          id?: number
+          sigla_uf?: string
+          tipo_eleicao?: string
+          versao_chave?: string
+        }
+        Relationships: []
+      }
+      cobertura: {
+        Row: {
+          ano_eleicao: number
+          fase: string
+          id: number
+          municipio_nome: string | null
+          municipio_num: number
+          percentual: number
+          sigla_uf: string
+          total_bus_validados: number
+          total_secoes_estimado: number | null
+          updated_at: string
+        }
+        Insert: {
+          ano_eleicao: number
+          fase: string
+          id?: number
+          municipio_nome?: string | null
+          municipio_num: number
+          percentual?: number
+          sigla_uf: string
+          total_bus_validados?: number
+          total_secoes_estimado?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ano_eleicao?: number
+          fase?: string
+          id?: number
+          municipio_nome?: string | null
+          municipio_num?: number
+          percentual?: number
+          sigla_uf?: string
+          total_bus_validados?: number
+          total_secoes_estimado?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          municipio: string | null
+          nome: string | null
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          municipio?: string | null
+          nome?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          municipio?: string | null
+          nome?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      totais_cargo: {
+        Row: {
+          ano_eleicao: number
+          candidato_numero: number
+          cargo_codigo: number
+          fase: string
+          id: number
+          municipio_num: number | null
+          num_turno: number
+          sigla_uf: string | null
+          total_bus_computados: number
+          total_votos: number
+          updated_at: string
+        }
+        Insert: {
+          ano_eleicao: number
+          candidato_numero: number
+          cargo_codigo: number
+          fase: string
+          id?: number
+          municipio_num?: number | null
+          num_turno: number
+          sigla_uf?: string | null
+          total_bus_computados?: number
+          total_votos?: number
+          updated_at?: string
+        }
+        Update: {
+          ano_eleicao?: number
+          candidato_numero?: number
+          cargo_codigo?: number
+          fase?: string
+          id?: number
+          municipio_num?: number | null
+          num_turno?: number
+          sigla_uf?: string | null
+          total_bus_computados?: number
+          total_votos?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "colaborador" | "moderador" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +437,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["colaborador", "moderador", "admin"],
+    },
   },
 } as const

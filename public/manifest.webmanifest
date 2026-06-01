@@ -1,0 +1,14 @@
+{
+  "name": "Totalização Paralela Cidadã 2026",
+  "short_name": "Totalização 2026",
+  "description": "Auditoria cidadã das Eleições Gerais 2026.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fcfcfc",
+  "theme_color": "#0D1F4E",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

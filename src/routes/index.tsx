@@ -19,6 +19,14 @@ export const Route = createFileRoute("/")({
 
 function PainelPage() {
   const { user } = useAuth();
+  const [clock, setClock] = useState<string>("");
+  useEffect(() => {
+    const tick = () => setClock(new Date().toLocaleTimeString("pt-BR"));
+    tick();
+    const i = setInterval(tick, 1000);
+    return () => clearInterval(i);
+  }, []);
+
 
   const { data: totais } = useQuery({
     queryKey: ["totais-nacional", 2026, 1],
@@ -54,8 +62,8 @@ function PainelPage() {
       <section className="animate-reveal px-4 py-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-mono-label">Status Global</h2>
-          <span className="font-mono text-[10px] text-muted-foreground">
-            {new Date().toLocaleTimeString("pt-BR")} BRT
+          <span suppressHydrationWarning className="font-mono text-[10px] text-muted-foreground">
+            {clock || "--:--:--"} BRT
           </span>
         </div>
         <div className="grid grid-cols-3 gap-px overflow-hidden rounded-sm border border-border bg-border">

@@ -11,7 +11,7 @@ import { CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 export const Route = createFileRoute("/capturar")({
   head: () => ({ meta: [{ title: "Capturar BU · Totalização Paralela 2026" }] }),
   component: CapturarPage,
-  validateSearch: (s: Record<string, unknown>) => ({ teste: s.teste === "1" }),
+  validateSearch: (s: Record<string, unknown>) => ({ teste: s.teste === "1" || s.teste === true }),
 });
 
 function CapturarPage() {

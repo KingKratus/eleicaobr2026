@@ -53,7 +53,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Auditoria cidadã das Eleições Gerais 2026 em tempo real." },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "canonical", href: "https://totalizacao2026.lovable.app/" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

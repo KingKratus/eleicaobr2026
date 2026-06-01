@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://totalizacao2026.lovable.app/sitemap.xml

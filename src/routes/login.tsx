@@ -45,6 +45,18 @@ function LoginPage() {
     }
   }
 
+  async function handleReset() {
+    if (!email) {
+      toast.error("Informe seu email primeiro.");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Email de redefinição enviado.");
+  }
+
   async function handleGoogle() {
     const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (r.error) toast.error("Falha no Google Sign-In");
@@ -80,6 +92,12 @@ function LoginPage() {
       <button onClick={handleGoogle} className="rounded-sm border border-border bg-background py-3 text-sm font-bold">
         Continuar com Google
       </button>
+
+      {tab === "login" && (
+        <button onClick={handleReset} type="button" className="mt-4 text-center text-[11px] font-bold uppercase text-muted-foreground hover:text-foreground">
+          Esqueci minha senha
+        </button>
+      )}
     </div>
   );
 }

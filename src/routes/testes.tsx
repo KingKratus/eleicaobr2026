@@ -1,35 +1,271 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { useAuth } from "@/hooks/useAuth";
+import { validarBU } from "@/lib/validar-bu.functions";
+import { parseQRs } from "@/lib/bu-parser";
+import { CheckCircle2, XCircle, AlertTriangle, FlaskConical, FileText, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/testes")({
-  head: () => ({ meta: [{ title: "Modo de Treinamento · Totalização Paralela 2026" }] }),
+  head: () => ({ meta: [{ title: "Laboratório de Testes · Totalização Paralela 2026" }] }),
   component: TestesPage,
 });
 
+/**
+ * Conjuntos de QRs de exemplo para demonstração do parser.
+ * Estes BUs NÃO têm assinaturas TSE válidas — servem para exercitar
+ * o parser e mostrar os códigos de rejeição esperados.
+ */
+const EXEMPLOS: { nome: string; descricao: string; codigo_esperado: string; qrs: string[] }[] = [
+  {
+    nome: "BU mal formado",
+    descricao: "Falta o cabeçalho HASH no único QR.",
+    codigo_esperado: "PARSE_ERRO",
+    qrs: ["QRBU:1:1 VRQR:1.0 VRCH:2026.1 DTPL:20261004 FASE:O UNFE:SP ZONA:001 SECA:0001"],
+  },
+  {
+    nome: "BU 2024 em produção",
+    descricao: "DTPL aponta para 2024 — deve ser rejeitado fora do modo teste.",
+    codigo_esperado: "ANO_INVALIDO",
+    qrs: [
+      "QRBU:1:1 VRQR:1.0 VRCH:2024.1 DTPL:20241006 FASE:O UNFE:SP MUNI:71072 ZONA:001 SECA:0001 TURN:1 IDCA:TEST APTO:300 COMP:250 CARG:11 CAND:13 VOTO:120 CAND:22 VOTO:100 BRAN:15 NULO:15 HASH:abc123def456 ASSI:0000000000000000000000000000000000000000000000000000000000000000",
+    ],
+  },
+  {
+    nome: "BU 2026 sem chave TSE",
+    descricao: "Estrutura válida, mas a chave pública VRCH ainda não foi importada.",
+    codigo_esperado: "CHAVE_NAO_ENCONTRADA",
+    qrs: [
+      "QRBU:1:1 VRQR:1.0 VRCH:2026.1 DTPL:20261004 FASE:O UNFE:SP MUNI:71072 ZONA:001 SECA:0001 TURN:1 IDCA:TEST APTO:300 COMP:250 CARG:1 CAND:13 VOTO:140 CAND:22 VOTO:90 BRAN:10 NULO:10 HASH:deadbeefcafebabe ASSI:0000000000000000000000000000000000000000000000000000000000000000",
+    ],
+  },
+];
+
 function TestesPage() {
+  const { user, loading } = useAuth();
+  const validar = useServerFn(validarBU);
+  const [qrText, setQrText] = useState("");
+  const [modoTeste, setModoTeste] = useState(true);
+  const [resultado, setResultado] = useState<any>(null);
+  const [parseInfo, setParseInfo] = useState<any>(null);
+  const [processing, setProcessing] = useState(false);
+
+  function carregarExemplo(qrs: string[]) {
+    setQrText(qrs.join("\n\n"));
+    setResultado(null);
+    setParseInfo(null);
+  }
+
+  function inspecionar() {
+    const lista = qrText.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+    if (lista.length === 0) {
+      toast.error("Cole pelo menos um QR Code (separado por linha em branco).");
+      return;
+    }
+    const p = parseQRs(lista);
+    setParseInfo(p);
+    setResultado(null);
+    if (p.erro) toast.error(p.erro);
+    else toast.success(`Parser ok — ${Object.keys(p.campos).length} campos extraídos.`);
+  }
+
+  async function executar() {
+    if (!user) {
+      toast.error("Entre para executar testes contra o backend.");
+      return;
+    }
+    const lista = qrText.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+    if (lista.length === 0) {
+      toast.error("Cole ao menos um QR.");
+      return;
+    }
+    setProcessing(true);
+    try {
+      const r = await validar({ data: { qr_strings: lista, modo_teste: modoTeste } });
+      setResultado(r);
+      if (r.sucesso) toast.success("BU validado pelo backend.");
+      else toast.warning(`Rejeitado: ${r.codigo}`);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  function limpar() {
+    setQrText("");
+    setResultado(null);
+    setParseInfo(null);
+  }
+
   return (
     <AppShell testMode>
-      <section className="px-4 py-6 space-y-4">
-        <h2 className="text-mono-label">Modo de Treinamento</h2>
-        <p className="text-sm">
-          Aqui você pode praticar a captura usando BUs reais das eleições de 2022 e 2024.
-          Dados enviados nesta aba <strong>não contam</strong> para os resultados oficiais de 2026.
+      <section className="border-b border-border px-4 py-6">
+        <div className="mb-2 flex items-center gap-2">
+          <FlaskConical className="size-4 text-warning" />
+          <h2 className="text-mono-label">Laboratório de Testes</h2>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Exercite o parser e a validação Ed25519 com BUs de teste sem afetar a totalização oficial.
+          Dados marcados <code className="font-mono">modo_teste = true</code>.
         </p>
 
-        <Link to="/capturar" search={{ teste: true } as any} className="block rounded-sm bg-primary p-4 text-center text-sm font-bold uppercase text-primary-foreground">
-          Iniciar treinamento
-        </Link>
-
-        <div className="rounded-sm border border-border bg-card p-4 text-xs space-y-2">
-          <h3 className="font-bold">Como funciona</h3>
-          <ol className="list-decimal space-y-1 pl-4 text-muted-foreground">
-            <li>Aceita apenas BUs com data dos pleitos de 2022 ou 2024</li>
-            <li>Aceita fases Oficial, Simulado e Treinamento</li>
-            <li>Mesma validação Ed25519 dos BUs reais</li>
-            <li>Dados marcados com flag <code className="font-mono">modo_teste</code></li>
-          </ol>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Link
+            to="/capturar"
+            search={{ teste: "1" } as any}
+            className="rounded-sm bg-primary p-3 text-center text-xs font-bold uppercase text-primary-foreground"
+          >
+            Treinar com câmera
+          </Link>
+          <a
+            href="http://qrcodenobu.tse.jus.br/tse.qrcodebu/"
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-sm border border-border p-3 text-center text-xs font-bold uppercase"
+          >
+            BUs reais TSE ↗
+          </a>
         </div>
       </section>
+
+      <section className="border-b border-border px-4 py-6">
+        <h3 className="text-mono-label mb-3">1 · Cenários pré-carregados</h3>
+        <div className="space-y-2">
+          {EXEMPLOS.map((ex) => (
+            <button
+              key={ex.nome}
+              onClick={() => carregarExemplo(ex.qrs)}
+              className="flex w-full items-start justify-between gap-3 rounded-sm border border-border bg-card p-3 text-left hover:border-accent"
+            >
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase">{ex.nome}</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">{ex.descricao}</p>
+              </div>
+              <span className="shrink-0 rounded-sm bg-secondary px-2 py-0.5 font-mono text-[9px] font-bold">
+                {ex.codigo_esperado}
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-b border-border px-4 py-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-mono-label">2 · Entrada</h3>
+          {qrText && (
+            <button onClick={limpar} className="flex items-center gap-1 text-[10px] font-bold uppercase text-muted-foreground">
+              <Trash2 className="size-3" /> Limpar
+            </button>
+          )}
+        </div>
+        <textarea
+          value={qrText}
+          onChange={(e) => setQrText(e.target.value)}
+          rows={7}
+          placeholder="Cole o conteúdo de cada QR Code, separado por linha em branco…"
+          className="w-full rounded-sm border border-border bg-background p-3 font-mono text-[11px]"
+        />
+
+        <label className="mt-3 flex items-center gap-2 text-[11px]">
+          <input type="checkbox" checked={modoTeste} onChange={(e) => setModoTeste(e.target.checked)} />
+          <span>Marcar como <code className="font-mono">modo_teste</code> (aceita 2022/2024)</span>
+        </label>
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button
+            onClick={inspecionar}
+            className="flex items-center justify-center gap-1 rounded-sm border border-border bg-background py-2 text-xs font-bold uppercase"
+          >
+            <FileText className="size-3" /> Inspecionar
+          </button>
+          <button
+            disabled={processing || loading}
+            onClick={executar}
+            className="rounded-sm bg-accent py-2 text-xs font-bold uppercase text-accent-foreground disabled:opacity-50"
+          >
+            {processing ? "Validando…" : "Validar no servidor"}
+          </button>
+        </div>
+        {!user && !loading && (
+          <p className="mt-2 text-center text-[10px] text-muted-foreground">
+            <Link to="/login" className="font-bold uppercase text-accent">Entre</Link> para executar a validação Ed25519.
+          </p>
+        )}
+      </section>
+
+      {parseInfo && (
+        <section className="border-b border-border px-4 py-6">
+          <h3 className="text-mono-label mb-3">3 · Diagnóstico do parser</h3>
+          {parseInfo.erro ? (
+            <div className="rounded-sm border border-destructive/30 bg-destructive/5 p-3 text-xs">
+              <span className="font-bold uppercase text-destructive">Parse falhou</span>
+              <p className="mt-1">{parseInfo.erro}</p>
+            </div>
+          ) : (
+            <div className="space-y-3 text-[11px]">
+              <Linha label="QR Codes" valor={`${parseInfo.qr_meta.length}`} />
+              <Linha label="Hash final" valor={parseInfo.hash_final || "—"} mono />
+              <Linha label="Assinatura" valor={parseInfo.assinatura ? `${parseInfo.assinatura.slice(0, 24)}…` : "(ausente)"} mono />
+              <Linha label="Cargos extraídos" valor={`${parseInfo.votos.cargos.length}`} />
+              <details className="rounded-sm border border-border bg-card p-2">
+                <summary className="cursor-pointer text-[10px] font-bold uppercase">Campos do cabeçalho</summary>
+                <pre className="mt-2 overflow-x-auto font-mono text-[10px]">
+                  {JSON.stringify(parseInfo.campos, null, 2)}
+                </pre>
+              </details>
+            </div>
+          )}
+        </section>
+      )}
+
+      {resultado && (
+        <section className="px-4 py-6">
+          <h3 className="text-mono-label mb-3">4 · Resposta do servidor</h3>
+          <div
+            className={`rounded-sm border p-4 ${
+              resultado.sucesso
+                ? "border-success/30 bg-success/5"
+                : resultado.codigo === "DUPLICADO"
+                ? "border-warning/30 bg-warning/5"
+                : "border-destructive/30 bg-destructive/5"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {resultado.sucesso ? (
+                <CheckCircle2 className="size-5 text-success" />
+              ) : resultado.codigo === "DUPLICADO" ? (
+                <AlertTriangle className="size-5 text-warning" />
+              ) : (
+                <XCircle className="size-5 text-destructive" />
+              )}
+              <span className="text-sm font-bold uppercase">
+                {resultado.sucesso ? "Aceito" : resultado.codigo}
+              </span>
+            </div>
+            {resultado.erro && <p className="mt-2 text-xs">{resultado.erro}</p>}
+            {resultado.sucesso && (
+              <p className="mt-2 text-xs">
+                Zona {resultado.zona} · Seção {resultado.secao} · {resultado.uf} · {resultado.cargos_apurados} cargos
+              </p>
+            )}
+            <pre className="mt-3 overflow-x-auto rounded-sm bg-background p-2 font-mono text-[10px]">
+              {JSON.stringify(resultado, null, 2)}
+            </pre>
+          </div>
+        </section>
+      )}
     </AppShell>
+  );
+}
+
+function Linha({ label, valor, mono = false }: { label: string; valor: string; mono?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3 border-b border-border pb-1">
+      <span className="text-[10px] font-bold uppercase text-muted-foreground">{label}</span>
+      <span className={`text-right ${mono ? "font-mono break-all text-[10px]" : ""}`}>{valor}</span>
+    </div>
   );
 }

@@ -28,7 +28,16 @@ export const validarBU = createServerFn({ method: "POST" })
     if (parsed.erro) {
       return { sucesso: false, codigo: "PARSE_ERRO", erro: parsed.erro };
     }
-    const { campos, hash_final, assinatura, conteudo_completo, votos } = parsed;
+    const { campos, hash_final, assinatura, conteudo_completo, votos, cadeia_hash_valida, qr_meta } = parsed;
+
+    if (!cadeia_hash_valida) {
+      return {
+        sucesso: false,
+        codigo: "HASH_INVALIDO",
+        erro: "Cadeia de hashes SHA-512 inválida — algum QR Code está corrompido ou fora de ordem.",
+        qr_meta,
+      };
+    }
 
     // ── Validar ano da eleição
     const dtpl = campos["DTPL"] ?? "";

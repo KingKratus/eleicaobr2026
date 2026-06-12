@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestesRouteImport } from './routes/testes'
+import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as ResultadosRouteImport } from './routes/resultados'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as MeusBusRouteImport } from './routes/meus-bus'
@@ -22,6 +23,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const TestesRoute = TestesRouteImport.update({
   id: '/testes',
   path: '/testes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SobreRoute = SobreRouteImport.update({
+  id: '/sobre',
+  path: '/sobre',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResultadosRoute = ResultadosRouteImport.update({
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/meus-bus': typeof MeusBusRoute
   '/perfil': typeof PerfilRoute
   '/resultados': typeof ResultadosRoute
+  '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/meus-bus': typeof MeusBusRoute
   '/perfil': typeof PerfilRoute
   '/resultados': typeof ResultadosRoute
+  '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
 }
 export interface FileRoutesById {
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/meus-bus': typeof MeusBusRoute
   '/perfil': typeof PerfilRoute
   '/resultados': typeof ResultadosRoute
+  '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/meus-bus'
     | '/perfil'
     | '/resultados'
+    | '/sobre'
     | '/testes'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/meus-bus'
     | '/perfil'
     | '/resultados'
+    | '/sobre'
     | '/testes'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/meus-bus'
     | '/perfil'
     | '/resultados'
+    | '/sobre'
     | '/testes'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   MeusBusRoute: typeof MeusBusRoute
   PerfilRoute: typeof PerfilRoute
   ResultadosRoute: typeof ResultadosRoute
+  SobreRoute: typeof SobreRoute
   TestesRoute: typeof TestesRoute
 }
 
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/testes'
       fullPath: '/testes'
       preLoaderRoute: typeof TestesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sobre': {
+      id: '/sobre'
+      path: '/sobre'
+      fullPath: '/sobre'
+      preLoaderRoute: typeof SobreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/resultados': {
@@ -224,8 +244,19 @@ const rootRouteChildren: RootRouteChildren = {
   MeusBusRoute: MeusBusRoute,
   PerfilRoute: PerfilRoute,
   ResultadosRoute: ResultadosRoute,
+  SobreRoute: SobreRoute,
   TestesRoute: TestesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

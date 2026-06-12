@@ -10,7 +10,7 @@
  *  - ASSI no último QR
  */
 
-import { sha512 } from "@noble/hashes/sha2";
+import { sha512 } from "@noble/hashes/sha2.js";
 
 export interface QRMeta {
   idx: number;

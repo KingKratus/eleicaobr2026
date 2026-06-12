@@ -19,6 +19,9 @@ export type Database = {
           ano_eleicao: number
           assinatura: string
           assinatura_valida: boolean
+          blockchain_chain_id: number | null
+          blockchain_explorer_url: string | null
+          blockchain_tx: string | null
           comparecimento: number | null
           conteudo_completo: string
           created_at: string
@@ -57,6 +60,9 @@ export type Database = {
           ano_eleicao: number
           assinatura: string
           assinatura_valida?: boolean
+          blockchain_chain_id?: number | null
+          blockchain_explorer_url?: string | null
+          blockchain_tx?: string | null
           comparecimento?: number | null
           conteudo_completo: string
           created_at?: string
@@ -95,6 +101,9 @@ export type Database = {
           ano_eleicao?: number
           assinatura?: string
           assinatura_valida?: boolean
+          blockchain_chain_id?: number | null
+          blockchain_explorer_url?: string | null
+          blockchain_tx?: string | null
           comparecimento?: number | null
           conteudo_completo?: string
           created_at?: string

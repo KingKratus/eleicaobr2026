@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
+import { PizzaMenu } from "./PizzaMenu";
 
 interface AppShellProps {
   children: ReactNode;
@@ -19,9 +20,12 @@ export function AppShell({ children, title = "Totalização", subtitle = "Parale
       )}
 
       <header className={`sticky ${testMode ? "top-[26px]" : "top-0"} z-40 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur-md`}>
-        <div className="flex flex-col">
-          <span className="text-sm font-extrabold uppercase leading-none tracking-tighter">{title}</span>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{subtitle}</span>
+        <div className="flex items-center gap-3">
+          <PizzaMenu />
+          <div className="flex flex-col">
+            <span className="text-sm font-extrabold uppercase leading-none tracking-tighter">{title}</span>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{subtitle}</span>
+          </div>
         </div>
         {rightSlot ?? (
           <div className="flex items-center gap-2 rounded-sm border border-accent/20 bg-accent/10 px-2 py-1">

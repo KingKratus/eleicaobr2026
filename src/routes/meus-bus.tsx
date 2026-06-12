@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { anchorHashEVM } from "@/lib/evm-anchor";
+import { toast } from "sonner";
+import { ExternalLink, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/meus-bus")({
   head: () => ({ meta: [{ title: "Meus BUs · Totalização Paralela 2026" }] }),
@@ -12,6 +16,8 @@ export const Route = createFileRoute("/meus-bus")({
 
 function MeusBUsPage() {
   const { user, loading } = useAuth();
+  const qc = useQueryClient();
+  const [anchoring, setAnchoring] = useState<string | null>(null);
 
   const { data } = useQuery({
     queryKey: ["meus-bus", user?.id],
@@ -23,6 +29,25 @@ function MeusBUsPage() {
     },
     enabled: !!user,
   });
+
+  async function ancorar(buId: string, hash: string) {
+    setAnchoring(buId);
+    try {
+      const { txHash, explorerUrl, chainId } = await anchorHashEVM(hash);
+      const { error } = await supabase.from("boletins").update({
+        blockchain_tx: txHash,
+        blockchain_explorer_url: explorerUrl,
+        blockchain_chain_id: chainId,
+      } as any).eq("id", buId);
+      if (error) throw error;
+      toast.success("Hash registrado em Sepolia.");
+      qc.invalidateQueries({ queryKey: ["meus-bus", user?.id] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Falha ao ancorar.");
+    } finally {
+      setAnchoring(null);
+    }
+  }
 
   if (!loading && !user) {
     return (
@@ -41,19 +66,46 @@ function MeusBUsPage() {
             Você ainda não enviou BUs.
           </p>
         ) : (
-          <div className="space-y-1">
-            {data.map((bu) => (
-              <div key={bu.id} className="flex items-center justify-between rounded-sm border border-border bg-card p-3">
-                <div className="flex flex-col">
-                  <span className="font-mono text-[11px] uppercase text-muted-foreground">
-                    Zona {String(bu.zona).padStart(3, "0")} / Seção {String(bu.secao).padStart(4, "0")}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {bu.sigla_uf} · {new Date(bu.created_at).toLocaleString("pt-BR")}
-                    {bu.modo_teste && " · TESTE"}
-                  </span>
+          <div className="space-y-2">
+            {data.map((bu: any) => (
+              <div key={bu.id} className="rounded-sm border border-border bg-card p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="font-mono text-[11px] uppercase text-muted-foreground">
+                      Zona {String(bu.zona).padStart(3, "0")} / Seção {String(bu.secao).padStart(4, "0")}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {bu.sigla_uf} · {new Date(bu.created_at).toLocaleString("pt-BR")}
+                      {bu.modo_teste && " · TESTE"}
+                    </span>
+                  </div>
+                  <StatusBadge status={bu.status as any} />
                 </div>
-                <StatusBadge status={bu.status as any} />
+
+                {bu.status === "validado" && (
+                  <div className="mt-2 border-t border-border pt-2">
+                    {bu.blockchain_tx ? (
+                      <a
+                        href={bu.blockchain_explorer_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 font-mono text-[10px] text-accent hover:underline"
+                      >
+                        <ExternalLink className="size-3" />
+                        On-chain: {bu.blockchain_tx.slice(0, 10)}…{bu.blockchain_tx.slice(-6)}
+                      </a>
+                    ) : (
+                      <button
+                        disabled={anchoring === bu.id}
+                        onClick={() => ancorar(bu.id, bu.hash_final)}
+                        className="flex items-center gap-1 rounded-sm border border-accent/30 bg-accent/10 px-2 py-1 text-[10px] font-bold uppercase tracking-tight text-accent disabled:opacity-50"
+                      >
+                        <Link2 className="size-3" />
+                        {anchoring === bu.id ? "Assinando…" : "Ancorar em Sepolia"}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

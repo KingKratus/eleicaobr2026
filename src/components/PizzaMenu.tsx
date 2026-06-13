@@ -21,7 +21,7 @@ export function PizzaMenu() {
   const { user } = useAuth();
 
   const { data: isMod } = useQuery({
-    queryKey: ["role", user?.id],
+    queryKey: ["is-mod", user?.id],
     enabled: !!user,
     queryFn: async () => {
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", user!.id);

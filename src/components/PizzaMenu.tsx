@@ -30,6 +30,18 @@ export function PizzaMenu() {
     },
   });
 
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
+  const overlay = open && typeof document !== "undefined" ? createPortal(
+    <div className="fixed inset-0 z-[100] flex" onClick={() => setOpen(false)}>
+      <div className="absolute inset-0 bg-background/85 backdrop-blur-sm" />
+  ) : null;
+
   return (
     <>
       <button
@@ -40,8 +52,8 @@ export function PizzaMenu() {
         <Menu className="size-4" strokeWidth={2.5} />
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-[60] flex" onClick={() => setOpen(false)}>
+      {open && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[100] flex" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-background/85 backdrop-blur-sm" />
           <aside
             className="relative ml-auto flex h-full w-[min(320px,85vw)] flex-col border-l border-border bg-background shadow-2xl"

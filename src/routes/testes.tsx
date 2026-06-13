@@ -5,7 +5,9 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { validarBU } from "@/lib/validar-bu.functions";
 import { parseQRs } from "@/lib/bu-parser";
-import { CheckCircle2, XCircle, AlertTriangle, FlaskConical, FileText, Trash2 } from "lucide-react";
+import { anchorHashEVM } from "@/lib/evm-anchor";
+import { computeIpfsCid, publishNostrAnchor } from "@/lib/decentralized-anchor";
+import { CheckCircle2, XCircle, AlertTriangle, FlaskConical, FileText, Trash2, Anchor, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/testes")({
@@ -257,7 +259,109 @@ function TestesPage() {
           </div>
         </section>
       )}
+
+      <AnchorLab hashHex={parseInfo?.hash_final || resultado?.hash_final} />
     </AppShell>
+  );
+}
+
+function AnchorLab({ hashHex }: { hashHex?: string }) {
+  const [manual, setManual] = useState("");
+  const target = (hashHex || manual).trim();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [results, setResults] = useState<Record<string, any>>({});
+
+  async function runIpfs() {
+    if (!target) return toast.error("Forneça um hash (rode 'Inspecionar' antes ou cole abaixo).");
+    setBusy("ipfs");
+    try {
+      const payload = JSON.stringify({ type: "bu-anchor-v1", hash: target, ts: Date.now() });
+      const cid = computeIpfsCid(payload);
+      setResults((r) => ({ ...r, ipfs: { cid, gateway: `https://ipfs.io/ipfs/${cid}`, payload } }));
+      toast.success("CID IPFS calculado (determinístico).");
+    } catch (e: any) { toast.error(e.message); }
+    finally { setBusy(null); }
+  }
+
+  async function runNostr() {
+    if (!target) return toast.error("Forneça um hash.");
+    setBusy("nostr");
+    try {
+      const r = await publishNostrAnchor(target);
+      setResults((s) => ({ ...s, nostr: r }));
+      toast.success(`Publicado em ${r.relays.length} relay(s) Nostr.`);
+    } catch (e: any) { toast.error(e.message); }
+    finally { setBusy(null); }
+  }
+
+  async function runEvm() {
+    if (!target) return toast.error("Forneça um hash.");
+    setBusy("evm");
+    try {
+      const r = await anchorHashEVM(target);
+      setResults((s) => ({ ...s, evm: r }));
+      toast.success("Hash ancorado em Sepolia.");
+    } catch (e: any) { toast.error(e.message); }
+    finally { setBusy(null); }
+  }
+
+  return (
+    <section className="border-t border-border px-4 py-6">
+      <div className="mb-2 flex items-center gap-2">
+        <Anchor className="size-4 text-accent" />
+        <h3 className="text-mono-label">Ancoragem descentralizada (teste)</h3>
+      </div>
+      <p className="mb-3 text-[11px] text-muted-foreground">
+        Registra o hash SHA-512 do BU em três camadas independentes — qualquer auditor
+        pode reconstituir o hash a partir do BU e verificar a presença em cada uma.
+      </p>
+
+      <input
+        value={manual}
+        onChange={(e) => setManual(e.target.value)}
+        placeholder={hashHex ? `Usando hash inspecionado: ${hashHex.slice(0, 24)}…` : "Cole um hash hex (ou rode 'Inspecionar')"}
+        className="mb-3 w-full rounded-sm border border-border bg-background p-2 font-mono text-[10px]"
+      />
+
+      <div className="grid grid-cols-1 gap-2">
+        <button onClick={runIpfs} disabled={!!busy} className="rounded-sm border border-border bg-card p-3 text-left text-xs disabled:opacity-50">
+          <div className="flex items-center justify-between">
+            <span className="font-bold uppercase">IPFS · CID determinístico</span>
+            <span className="text-[9px] text-muted-foreground">SHA-256 multihash</span>
+          </div>
+          {results.ipfs && (
+            <p className="mt-2 break-all font-mono text-[10px] text-accent">{results.ipfs.cid}</p>
+          )}
+        </button>
+
+        <button onClick={runNostr} disabled={!!busy} className="rounded-sm border border-border bg-card p-3 text-left text-xs disabled:opacity-50">
+          <div className="flex items-center justify-between">
+            <span className="font-bold uppercase">Nostr · evento público</span>
+            <span className="text-[9px] text-muted-foreground">{busy === "nostr" ? "publicando…" : "relays.damus / nos.lol / nostr.band"}</span>
+          </div>
+          {results.nostr && (
+            <a href={results.nostr.njumpUrl} target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-1 break-all font-mono text-[10px] text-accent">
+              {results.nostr.eventId} <ExternalLink className="size-3" />
+            </a>
+          )}
+        </button>
+
+        <button onClick={runEvm} disabled={!!busy} className="rounded-sm border border-accent/40 bg-accent/5 p-3 text-left text-xs disabled:opacity-50">
+          <div className="flex items-center justify-between">
+            <span className="font-bold uppercase">EVM Sepolia · carteira (MetaMask)</span>
+            <span className="text-[9px] text-muted-foreground">{busy === "evm" ? "assinando…" : "testnet · grátis"}</span>
+          </div>
+          {results.evm && (
+            <a href={results.evm.explorerUrl} target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-1 break-all font-mono text-[10px] text-accent">
+              {results.evm.txHash} <ExternalLink className="size-3" />
+            </a>
+          )}
+        </button>
+      </div>
+      <p className="mt-3 text-[10px] text-muted-foreground">
+        Para EVM mainnet real, troque de rede na sua carteira após apertar o botão — o custo será em ETH real.
+      </p>
+    </section>
   );
 }
 

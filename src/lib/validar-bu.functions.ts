@@ -71,9 +71,22 @@ export const validarBU = createServerFn({ method: "POST" })
       }
     }
 
+    // ── Bloqueio de validação cruzada: ano do VRCH precisa bater com ano do BU
+    const vrch_raw = campos["VRCH"] ?? "";
+    const vrch_ano_match = vrch_raw.match(/^(\d{4})/);
+    const vrch_ano = vrch_ano_match ? parseInt(vrch_ano_match[1], 10) : null;
+    if (vrch_ano && vrch_ano !== ano_bu) {
+      return {
+        sucesso: false,
+        codigo: "VRCH_INCOMPATIVEL",
+        erro: `Versão de chave VRCH=${vrch_raw} (eleição ${vrch_ano}) não corresponde ao ano do BU (${ano_bu}). Validação cruzada bloqueada.`,
+      };
+    }
+
     if (!assinatura) {
       return { sucesso: false, codigo: "SEM_ASSINATURA", erro: "Último QR Code não contém o campo ASSI (assinatura)." };
     }
+
 
     // ── Buscar chave pública TSE
     const versao_chave = campos["VRCH"];

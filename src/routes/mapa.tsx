@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { UFS } from "@/lib/cargos";
@@ -26,6 +26,8 @@ type CoberturaRow = {
 
 function MapaPage() {
   const [ufSelecionada, setUfSelecionada] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const { data: rows = [] } = useQuery({
     queryKey: ["cobertura-detalhada"],
@@ -67,14 +69,18 @@ function MapaPage() {
 
       <section className="px-4 py-4">
         <div className="h-[55vh] min-h-[320px] overflow-hidden rounded-sm border border-border bg-card">
-          <Suspense fallback={<MapPlaceholder />}>
-            <BrazilMap
-              porUf={porUf}
-              maxUf={maxUf}
-              ufSelecionada={ufSelecionada}
-              onSelectUf={setUfSelecionada}
-            />
-          </Suspense>
+          {mounted ? (
+            <Suspense fallback={<MapPlaceholder />}>
+              <BrazilMap
+                porUf={porUf}
+                maxUf={maxUf}
+                ufSelecionada={ufSelecionada}
+                onSelectUf={setUfSelecionada}
+              />
+            </Suspense>
+          ) : (
+            <MapPlaceholder />
+          )}
         </div>
         <p className="mt-2 text-[10px] text-muted-foreground">
           Tiles © <a className="underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>

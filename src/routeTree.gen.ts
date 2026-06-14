@@ -19,6 +19,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as CapturarRouteImport } from './routes/capturar'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicHooksSyncChavesTseRouteImport } from './routes/api/public/hooks/sync-chaves-tse'
 
 const TestesRoute = TestesRouteImport.update({
   id: '/testes',
@@ -70,6 +71,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSyncChavesTseRoute =
+  ApiPublicHooksSyncChavesTseRouteImport.update({
+    id: '/api/public/hooks/sync-chaves-tse',
+    path: '/api/public/hooks/sync-chaves-tse',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/resultados': typeof ResultadosRoute
   '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
+  '/api/public/hooks/sync-chaves-tse': typeof ApiPublicHooksSyncChavesTseRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +102,7 @@ export interface FileRoutesByTo {
   '/resultados': typeof ResultadosRoute
   '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
+  '/api/public/hooks/sync-chaves-tse': typeof ApiPublicHooksSyncChavesTseRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/resultados': typeof ResultadosRoute
   '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
+  '/api/public/hooks/sync-chaves-tse': typeof ApiPublicHooksSyncChavesTseRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/resultados'
     | '/sobre'
     | '/testes'
+    | '/api/public/hooks/sync-chaves-tse'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/resultados'
     | '/sobre'
     | '/testes'
+    | '/api/public/hooks/sync-chaves-tse'
   id:
     | '__root__'
     | '/'
@@ -145,6 +157,7 @@ export interface FileRouteTypes {
     | '/resultados'
     | '/sobre'
     | '/testes'
+    | '/api/public/hooks/sync-chaves-tse'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +171,7 @@ export interface RootRouteChildren {
   ResultadosRoute: typeof ResultadosRoute
   SobreRoute: typeof SobreRoute
   TestesRoute: typeof TestesRoute
+  ApiPublicHooksSyncChavesTseRoute: typeof ApiPublicHooksSyncChavesTseRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sync-chaves-tse': {
+      id: '/api/public/hooks/sync-chaves-tse'
+      path: '/api/public/hooks/sync-chaves-tse'
+      fullPath: '/api/public/hooks/sync-chaves-tse'
+      preLoaderRoute: typeof ApiPublicHooksSyncChavesTseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +267,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResultadosRoute: ResultadosRoute,
   SobreRoute: SobreRoute,
   TestesRoute: TestesRoute,
+  ApiPublicHooksSyncChavesTseRoute: ApiPublicHooksSyncChavesTseRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

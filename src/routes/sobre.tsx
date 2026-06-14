@@ -65,7 +65,8 @@ function SobrePage() {
 
         <h2 className="mt-6 text-mono-label">Fontes</h2>
         <ul>
-          <li><a href="http://qrcodenobu.tse.jus.br/tse.qrcodebu/" target="_blank" rel="noreferrer">Chaves públicas TSE</a></li>
+          <li><a href="https://www.tse.jus.br/eleicoes/eleicoes-2024-content/arquivos/qr-code-no-boletim-de-urna" target="_blank" rel="noreferrer">Manual TSE — QR Code no BU</a></li>
+          <li><a href="https://dadosabertos.tse.jus.br/dataset/?groups=resultados" target="_blank" rel="noreferrer">Dados Abertos TSE (BUs reais)</a></li>
           <li><a href="https://ed25519.cr.yp.to/" target="_blank" rel="noreferrer">Ed25519 spec</a></li>
           <li><a href="https://github.com/paulmillr/noble-ed25519" target="_blank" rel="noreferrer">Noble Ed25519 (JS)</a></li>
         </ul>

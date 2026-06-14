@@ -1,14 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { validarBU } from "@/lib/validar-bu.functions";
 import { parseQRs } from "@/lib/bu-parser";
 import { anchorHashEVM } from "@/lib/evm-anchor";
 import { computeIpfsCid, publishNostrAnchor } from "@/lib/decentralized-anchor";
-import { CheckCircle2, XCircle, AlertTriangle, FlaskConical, FileText, Trash2, Anchor, ExternalLink } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { CheckCircle2, XCircle, AlertTriangle, FlaskConical, FileText, Trash2, Anchor, ExternalLink, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/testes")({
   head: () => ({ meta: [{ title: "Laboratório de Testes · Totalização Paralela 2026" }] }),

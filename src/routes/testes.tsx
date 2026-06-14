@@ -1,14 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { validarBU } from "@/lib/validar-bu.functions";
 import { parseQRs } from "@/lib/bu-parser";
 import { anchorHashEVM } from "@/lib/evm-anchor";
 import { computeIpfsCid, publishNostrAnchor } from "@/lib/decentralized-anchor";
-import { CheckCircle2, XCircle, AlertTriangle, FlaskConical, FileText, Trash2, Anchor, ExternalLink } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { CheckCircle2, XCircle, AlertTriangle, FlaskConical, FileText, Trash2, Anchor, ExternalLink, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/testes")({
   head: () => ({ meta: [{ title: "Laboratório de Testes · Totalização Paralela 2026" }] }),
@@ -96,11 +98,49 @@ function TestesPage() {
     }
   }
 
+  // ── Seleção automática do conjunto de chaves Ed25519 (2024 vs 2026)
+  const vrch = parseInfo?.campos?.["VRCH"] as string | undefined;
+  const uf = (parseInfo?.campos?.["UNFE"] as string | undefined)?.toUpperCase();
+  const fase = parseInfo?.campos?.["FASE"] as string | undefined;
+  const dtplAno = (() => {
+    const d = parseInfo?.campos?.["DTPL"] as string | undefined;
+    return d ? parseInt(d.substring(0, 4), 10) : null;
+  })();
+  const vrchAno = vrch?.match(/^(\d{4})/)?.[1] ? parseInt(vrch!.substring(0, 4), 10) : null;
+  const vrchMismatch = vrchAno && dtplAno && vrchAno !== dtplAno;
+
+  const [chaveInfo, setChaveInfo] = useState<any>(null);
+  useEffect(() => {
+    setChaveInfo(null);
+    if (!vrch || !uf || !fase) return;
+    let cancel = false;
+    (async () => {
+      const { data } = await supabase
+        .from("chaves_tse")
+        .select("versao_chave,sigla_uf,fase,tipo_eleicao,ano_eleicao,ativo,ultima_sincronizacao,valido_de,valido_ate")
+        .eq("versao_chave", vrch)
+        .eq("sigla_uf", uf)
+        .eq("fase", fase)
+        .maybeSingle();
+      if (!cancel) setChaveInfo(data ?? { _missing: true });
+    })();
+    return () => { cancel = true; };
+  }, [vrch, uf, fase]);
+
+  const podeExecutar = useMemo(() => {
+    if (vrchMismatch) return false;
+    if (modoTeste && vrchAno && vrchAno === 2026) return false;
+    if (!modoTeste && vrchAno && vrchAno !== 2026) return false;
+    return true;
+  }, [vrchMismatch, modoTeste, vrchAno]);
+
   function limpar() {
     setQrText("");
     setResultado(null);
     setParseInfo(null);
+    setChaveInfo(null);
   }
+
 
   return (
     <AppShell testMode>
@@ -193,19 +233,54 @@ function TestesPage() {
             <FileText className="size-3" /> Inspecionar
           </button>
           <button
-            disabled={processing || loading}
+            disabled={processing || loading || !podeExecutar}
             onClick={executar}
             className="rounded-sm bg-accent py-2 text-xs font-bold uppercase text-accent-foreground disabled:opacity-50"
+            title={!podeExecutar ? "Conjunto de chaves incompatível com o modo selecionado" : ""}
           >
             {processing ? "Validando…" : "Validar no servidor"}
           </button>
         </div>
+        {!podeExecutar && parseInfo && !parseInfo.erro && (
+          <p className="mt-2 rounded-sm border border-destructive/30 bg-destructive/5 p-2 text-[10px] text-destructive">
+            Validação cruzada bloqueada: VRCH={vrch} (eleição {vrchAno}) {vrchMismatch ? `não bate com DTPL ${dtplAno}` : `incompatível com modo ${modoTeste ? "teste (2022/2024)" : "produção (2026)"}`}.
+          </p>
+        )}
         {!user && !loading && (
           <p className="mt-2 text-center text-[10px] text-muted-foreground">
             <Link to="/login" className="font-bold uppercase text-accent">Entre</Link> para executar a validação Ed25519.
           </p>
         )}
       </section>
+
+      {parseInfo && !parseInfo.erro && vrch && (
+        <section className="border-b border-border px-4 py-6">
+          <div className="mb-2 flex items-center gap-2">
+            <KeyRound className="size-4 text-accent" />
+            <h3 className="text-mono-label">Conjunto de chaves Ed25519 selecionado</h3>
+          </div>
+          <div className="space-y-2 text-[11px]">
+            <Linha label="VRCH (BU)" valor={vrch} mono />
+            <Linha label="Eleição (VRCH)" valor={vrchAno ? String(vrchAno) : "—"} />
+            <Linha label="UF / Fase" valor={`${uf ?? "—"} · ${fase ?? "—"}`} />
+            {chaveInfo === null && <p className="text-muted-foreground">Consultando tabela versionada…</p>}
+            {chaveInfo?._missing && (
+              <p className="rounded-sm border border-warning/40 bg-warning/5 p-2 text-warning">
+                Chave não encontrada para VRCH={vrch}/{uf}/{fase}. Aguarde a rotina diária de sincronização ou importe manualmente no Admin.
+              </p>
+            )}
+            {chaveInfo && !chaveInfo._missing && (
+              <>
+                <Linha label="Tipo" valor={`${chaveInfo.tipo_eleicao} · ano ${chaveInfo.ano_eleicao}`} />
+                <Linha label="Validade" valor={`${chaveInfo.valido_de ?? "?"} → ${chaveInfo.valido_ate ?? "?"}`} />
+                <Linha label="Última sync" valor={chaveInfo.ultima_sincronizacao ? new Date(chaveInfo.ultima_sincronizacao).toLocaleString("pt-BR") : "—"} />
+                <Linha label="Status" valor={chaveInfo.ativo ? "ATIVA" : "INATIVA"} />
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
 
       {parseInfo && (
         <section className="border-b border-border px-4 py-6">

@@ -142,6 +142,7 @@ export type Database = {
       }
       chaves_tse: {
         Row: {
+          abrangencia: string
           ano_eleicao: number
           ativo: boolean
           chave_publica_hex: string
@@ -150,9 +151,15 @@ export type Database = {
           id: number
           sigla_uf: string
           tipo_eleicao: string
+          ultima_sincronizacao: string | null
+          updated_at: string
+          url_origem: string | null
+          valido_ate: string | null
+          valido_de: string | null
           versao_chave: string
         }
         Insert: {
+          abrangencia?: string
           ano_eleicao: number
           ativo?: boolean
           chave_publica_hex: string
@@ -161,9 +168,15 @@ export type Database = {
           id?: number
           sigla_uf: string
           tipo_eleicao: string
+          ultima_sincronizacao?: string | null
+          updated_at?: string
+          url_origem?: string | null
+          valido_ate?: string | null
+          valido_de?: string | null
           versao_chave: string
         }
         Update: {
+          abrangencia?: string
           ano_eleicao?: number
           ativo?: boolean
           chave_publica_hex?: string
@@ -172,6 +185,11 @@ export type Database = {
           id?: number
           sigla_uf?: string
           tipo_eleicao?: string
+          ultima_sincronizacao?: string | null
+          updated_at?: string
+          url_origem?: string | null
+          valido_ate?: string | null
+          valido_de?: string | null
           versao_chave?: string
         }
         Relationships: []

@@ -123,13 +123,22 @@ function TestesPage() {
             Treinar com câmera
           </Link>
           <a
-            href="http://qrcodenobu.tse.jus.br/tse.qrcodebu/"
+            href="https://dadosabertos.tse.jus.br/dataset/?groups=resultados"
             target="_blank"
             rel="noreferrer"
             className="rounded-sm border border-border p-3 text-center text-xs font-bold uppercase"
           >
-            BUs reais TSE ↗
+            BUs reais (Dados Abertos TSE) ↗
           </a>
+        </div>
+
+        <div className="mt-3 rounded-sm border border-warning/40 bg-warning/5 p-3 text-[11px] leading-relaxed">
+          <p className="font-bold uppercase text-warning">Chaves Ed25519 mudam por eleição</p>
+          <p className="mt-1 text-muted-foreground">
+            O TSE gera um novo par de chaves a cada pleito — a <code className="font-mono">VRCH</code> do BU
+            identifica a versão. Chaves de <strong>2024</strong> (eleições municipais) <strong>não</strong> validam BUs
+            de <strong>2026</strong> (eleições gerais). Importe as chaves 2026 no Admin assim que forem publicadas pelo TSE.
+          </p>
         </div>
       </section>
 

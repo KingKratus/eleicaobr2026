@@ -98,11 +98,49 @@ function TestesPage() {
     }
   }
 
+  // ── Seleção automática do conjunto de chaves Ed25519 (2024 vs 2026)
+  const vrch = parseInfo?.campos?.["VRCH"] as string | undefined;
+  const uf = (parseInfo?.campos?.["UNFE"] as string | undefined)?.toUpperCase();
+  const fase = parseInfo?.campos?.["FASE"] as string | undefined;
+  const dtplAno = (() => {
+    const d = parseInfo?.campos?.["DTPL"] as string | undefined;
+    return d ? parseInt(d.substring(0, 4), 10) : null;
+  })();
+  const vrchAno = vrch?.match(/^(\d{4})/)?.[1] ? parseInt(vrch!.substring(0, 4), 10) : null;
+  const vrchMismatch = vrchAno && dtplAno && vrchAno !== dtplAno;
+
+  const [chaveInfo, setChaveInfo] = useState<any>(null);
+  useEffect(() => {
+    setChaveInfo(null);
+    if (!vrch || !uf || !fase) return;
+    let cancel = false;
+    (async () => {
+      const { data } = await supabase
+        .from("chaves_tse")
+        .select("versao_chave,sigla_uf,fase,tipo_eleicao,ano_eleicao,ativo,ultima_sincronizacao,valido_de,valido_ate")
+        .eq("versao_chave", vrch)
+        .eq("sigla_uf", uf)
+        .eq("fase", fase)
+        .maybeSingle();
+      if (!cancel) setChaveInfo(data ?? { _missing: true });
+    })();
+    return () => { cancel = true; };
+  }, [vrch, uf, fase]);
+
+  const podeExecutar = useMemo(() => {
+    if (vrchMismatch) return false;
+    if (modoTeste && vrchAno && vrchAno === 2026) return false;
+    if (!modoTeste && vrchAno && vrchAno !== 2026) return false;
+    return true;
+  }, [vrchMismatch, modoTeste, vrchAno]);
+
   function limpar() {
     setQrText("");
     setResultado(null);
     setParseInfo(null);
+    setChaveInfo(null);
   }
+
 
   return (
     <AppShell testMode>

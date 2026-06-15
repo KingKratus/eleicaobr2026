@@ -82,7 +82,7 @@ export default function BrazilMap({ porUf, maxUf, ufSelecionada, onSelectUf }: P
       />
       {geo && (
         <>
-          <GeoJSON data={geo} style={style as any} onEachFeature={onEach} key={`${ufSelecionada}-${maxUf}`} />
+          <GeoJSON data={geo} style={style as any} onEachFeature={onEach} />
           <FitToFeatures geo={geo} ufSelecionada={ufSelecionada} />
         </>
       )}

@@ -1,105 +1,90 @@
-# Próximos passos — Totalização Paralela 2026
+## Escopo
 
-Plano baseado na comparação direta entre o **Manual TSE — QR Code no BU (2024)** e o código já implementado.
-
----
-
-## Divergências encontradas no código atual
-
-
-| #   | Manual (seções 4.2 / 4.3 / 6)                                                                                                                      | Código atual                                                                                            | Risco                                                           |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| 1   | Candidatos aparecem como tokens bare `nnnnn:nnnn` (ex.: `91001:1`, `92:1`), dentro de blocos `CARG:` e opcionalmente `PART:`                       | `extrairVotos` em `bu-parser.ts` procura `CAND:` e `VOTO:` — **tokens que não existem no formato real** | Totais sempre zerados — `totais_cargo` nunca recebe votos reais |
-| 2   | HASH de cada QR é **cumulativo**: `hashₙ = SHA-512(conteúdoₙ₋₁ + dadosₙ)` e permite verificar leitura em sequência                                 | Cadeia de hashes não é recomputada/validada; só o hash final entra na assinatura                        | Fragmentos forjados/embaralhados passam                         |
-| 3   | Chaves públicas oficiais ficam em `http://qrcodenobu.tse.jus.br/tse.qrcodebu/{VRCH}/{LEGAL|COMUNITARIA}/{O|S}{uf}qrcode.pub` (binário de 32 bytes) | Admin só permite digitação manual (64 hex) — sem fetch oficial                                          | Cadastro lento e propenso a erro de digitação                   |
-| 4   | Reconstrução para hash/assinatura exige **reinserir o espaço em branco** removido na quebra entre QRs (§4)                                         | Junção simples com `" "` entre QRs                                                                      | Casos de BU multi-QR podem falhar na verificação                |
-| 5   | Códigos de cargo: 1, 3, 5, 6, 7, 8, 9, 11, 13                                                                                                      | Verificar `src/lib/cargos.ts`                                                                           | Possível inconsistência                                         |
-
+Vou tratar tudo do pedido em um único ciclo, dividido por área. Nada destrutivo nos dados existentes.
 
 ---
 
-## Escopo desta etapa
+### 1. Chaves TSE 2020/2022/2024/2026 — sincronização & UI
 
-### 1. Reescrever `extrairVotos` conforme §4.2 do manual
+**Bug atual:** o cron diário só varre 2024/ano-atual/próximo. 2020 e 2022 nunca entram. Além disso a UI do admin só permite digitar um VRCH por vez.
 
-- Tokenizar o conteúdo respeitando os blocos: `CARG → TIPO → VERC → (PART → LEGP → TOTP)* → (nnnnn:nnnn)* → APTA APTS APTT [CSEC] NOMI [LEGC] BRAN NULO TOTC`.
-- Candidatos: qualquer token `^\d+:\d+$` dentro de um cargo (entre `CARG:` atual e o próximo `CARG:` ou EOF), excluindo chaves conhecidas (`APTA`, `NOMI`, etc.).
-- Persistir também: `tipo` (0/1/2), `legenda`, `nominais`, `aptos`, `comparecimento_cargo`.
-- Atualizar trigger `agregar_totais_bu` se necessário (o shape JSON muda).
+- Estender `src/routes/api/public/hooks/sync-chaves-tse.ts` para varrer também 2020 e 2022 (lista fixa de VRCHs conhecidos + heurística por ano), gravando `ano_eleicao` correto.
+- Adicionar botão **"Buscar chaves 2020/2022/2024/2026 do TSE"** no painel admin (`src/routes/admin.tsx`) que dispara `fetch('/api/public/hooks/sync-chaves-tse', { method: 'POST' })` e mostra contagem por ano.
+- Manter o formulário manual existente (VRCH + UF + lote).
+- Mostrar agrupamento por ano no listão de chaves.
 
-### 2. Validar cadeia de hashes (§4.3 + §6.1)
+### 2. Painel de moderação — bugs
 
-- Para cada QR `i`, recomputar `SHA-512(conteúdo_acumulado_até_i)` em hex e comparar com `HASH:` do QR.
-- Em caso de divergência, rejeitar com código novo `HASH_INVALIDO`.
-- Tratar o detalhe do espaço em branco da quebra (reinserir antes do hash).
+- Verificar carregamento dos BUs (a policy RLS já cobre admin; o sintoma "não funciona" vem do botão Auditor IA só aparecer quando `status === 'validado'` e de erros silenciosos). Adicionar:
+  - Estado vazio explícito ("Nenhum BU recebido ainda").
+  - Filtro por status (todos/pendente/validado/rejeitado).
+  - Botões **aprovar/rejeitar manualmente** (chama UPDATE via supabase) — usa policy `Moderador/admin pode atualizar status` que já existe.
+  - Toast de erro real em vez de falha silenciosa.
+- Confirmar que o gate de acesso já inclui admin (já inclui — `r.role === 'moderador' || 'admin'`); manter.
 
-### 3. Fetch oficial de chaves TSE no Admin
+### 3. Modo teste — simulação até a interface de apuração
 
-- Novo `createServerFn` `importarChaveTSE({ versao_chave, uf, tipo_eleicao, fase })`:
-  - Monta URL `http://qrcodenobu.tse.jus.br/tse.qrcodebu/{VRCH}/{LEGAL|COMUNITARIA}/{fase}{uf_min}qrcode.pub`.
-  - Faz `fetch`, lê `ArrayBuffer`, verifica 32 bytes, converte para hex.
-  - Upsert em `chaves_tse`.
-- Admin ganha botão "Baixar do TSE" (preenche por UF + versão + tipo + fase) e "Importar todas (BR + 27 UFs)" em lote.
-- Mantém o formulário manual como fallback.
+- Em `src/routes/testes.tsx`, adicionar seção **"5 · Simulação de fluxo"** que após um BU teste ser validado mostra:
+  - Mini-painel "Entrando na apuração" com animação dos votos somando aos totais de teste (consulta `totais_cargo` filtrando `modo_teste`/visualização local).
+  - Link "Ver em /resultados (modo teste)" preservando a flag.
+- Permitir **salvar BUs de teste reutilizáveis**: nova tabela `bus_teste_salvos` (admin-only RLS) e botão "Salvar este BU" + dropdown "Carregar BU salvo" no Lab.
 
-### 4. Página `/sobre` — metodologia para auditores
+### 4. Ancoragem descentralizada — gateways de verificação
 
-- Explica: parser, verificação Ed25519, regras de aceitação (ano 2026, fase O), modo teste (2022/2024), agregação, limites.
-- Links: manual TSE, código fonte, FAQ.
-- SEO próprio (title, description, OG).
+- **IPFS:** após calcular o CID, mostrar 3 gateways clicáveis para verificação real:
+  - `https://ipfs.io/ipfs/{cid}`, `https://cloudflare-ipfs.com/ipfs/{cid}`, `https://w3s.link/ipfs/{cid}`
+  - Adicionar botão **"Publicar no IPFS (web3.storage)"** opcional via API pública (`https://api.web3.storage`) — exige token do usuário, com fallback explicando que o CID determinístico já permite verificação se o conteúdo for republicado.
+- **Nostr (bug real):** o `Relay.connect` de `nostr-tools` falha em vários browsers por causa de WebSocket sync e o `Promise.all` engole erros. Corrigir:
+  - Aumentar timeout, aguardar `relay.publish()` de fato (Promise que resolve quando o relay confirma), capturar erros individuais e devolver para a UI.
+  - Adicionar relays adicionais (`wss://relay.primal.net`, `wss://nostr.wine`).
+  - Mostrar links de verificação em múltiplos gateways: `njump.me`, `nostr.com/e/`, `primal.net/e/`.
+  - Adicionar gateway HTTP de leitura (`https://api.nostr.band/v0/event/{id}`) com botão "Verificar agora".
 
-### 5. Auditor AI com NVIDIA Build (OpenAI-compatible + tool calling)
+### 5. Documentação de API no admin (export PDF/CSV)
 
-- Endpoint `https://integrate.api.nvidia.com/v1` via `@ai-sdk/openai-compatible`.
-- Modelo default: `meta/llama-3.3-70b-instruct` (override por env).
-- `createServerFn` `auditarBU({ bu_id })` protegido por `requireSupabaseAuth` + checagem `has_role('auditor'|'admin')`:
-  - Carrega o BU + agregados da seção/zona.
-  - AI SDK `streamText` com `stopWhen: stepCountIs(50)` e tools:
-    - `getTotaisSecao(zona, secao)`, `getCoberturaUF(uf)`, `getCargo(codigo)`, `compararSecoesVizinhas(...)`.
-  - Devolve resumo + apontamentos (votos negativos, totais inconsistentes, candidatos fora do pleito).
-- UI: aba "Auditor IA" no `/admin` (apenas role admin/auditor), abre painel com streaming.
-- Chave armazenada em **secret server-side** `NVIDIA_API_KEY` (nunca em `VITE_`).
+Nova aba **"API"** no admin (`src/routes/admin.tsx` com seção colapsável ou nova rota `/admin/api`):
+- Lista de endpoints documentados (path, método, auth, payload, response):
+  - `POST /api/public/hooks/sync-chaves-tse` — sincroniza chaves
+  - Server functions: `validarBU`, `importarChaveTSE`, `auditarBU`
+  - Endpoints REST sugeridos novos (criar): `GET /api/public/v1/totais`, `GET /api/public/v1/cobertura`, `GET /api/public/v1/boletins/:id` (read-only, sem PII)
+- Botões **Exportar PDF** (via `jspdf`) e **Exportar CSV** da spec.
 
-### 6. Refinos do Lab de Testes
+### 6. Terminal de execução do BU
 
-- Adicionar o BU exemplo "pequeno" do manual (página 18) com VRCH `20240507` como cenário pré-cadastrado.
-- Botão "Importar chave deste exemplo" que chama o fetch oficial e roda end-to-end (assinatura real válida).
+Componente `<BuTerminal>` no Lab e na captura: painel preto estilo console que mostra em tempo real as etapas:
+```
+> parseQRs ... OK (3 QRs, 12 cargos)
+> validar chave VRCH=2026.1/SP/O ... OK
+> verificar assinatura Ed25519 ... OK
+> calcular hash SHA-512 ... OK (abc123...)
+> inserir em boletins ... OK (id=...)
+> agregar totais ... OK
+```
+Implementar como log push (`useState<string[]>`) alimentado pelas etapas reais de `validarBU` (devolver `etapas[]` no resultado) + ancoragem.
+
+### 7. Bugs adicionais
+
+- **Mapa Leaflet crash (`_leaflet_pos`)**: ocorre por re-mount durante navegação. Adicionar `key` estável e cleanup no `useEffect` do `BrazilMap.tsx`.
+- Garantir que o `sync-chaves-tse` lida com 404 silencioso (não polui a UI).
 
 ---
 
-## Detalhes técnicos
+## Detalhamento técnico
 
-- **Parser** em `src/lib/bu-parser.ts` ganha uma máquina de estados (state machine) com testes unitários (`bun test`) usando os 2 BUs do manual.
-- **Hash cumulativo**: usar `sha512` já importado de `@noble/hashes/sha2`.
-- **Fetch TSE**: dentro de `.handler()` (Worker tem `fetch`); responde plain DTO. Endpoint TSE é HTTP — ok no Worker.
-- **AI SDK**: provider helper em `src/lib/nvidia-gateway.server.ts`, lendo `process.env.NVIDIA_API_KEY` dentro do handler.
-- **Tools** com `tool({ inputSchema: z.object(...), execute })`. `stepCountIs(50)`.
-- **Server-only**: `*.server.ts` para o provider; `auditar.functions.ts` em `src/lib/`.
-- **Migration**: provável atualização da coluna `votos` (mesmo shape, só campos adicionais — JSONB acomoda) e talvez novo `app_role` `'auditor'`. Migração separada após aprovação.
+- Migração nova: `bus_teste_salvos` (id, user_id, nome, qrs jsonb, created_at) + RLS admin-only + GRANTs.
+- Nenhuma alteração em policies existentes.
+- Sem novos secrets obrigatórios.
+- Sem alteração de auth ou estrutura de rotas autenticadas.
 
----
+## Arquivos afetados
 
-## Pré-requisito
-
-Para a etapa 5, preciso que você adicione o secret `**NVIDIA_API_KEY**` (sua chave do NVIDIA Build / `build.nvidia.com`). Vou pedir via `add_secret` ao iniciar a implementação. Sem ela, faço apenas etapas 1–4 + 6.
-
-## Ordem de execução
-
-1. Parser de votos + testes (etapa 1)
-2. Validação de cadeia de hashes (etapa 2)
-3. Fetch oficial de chaves no Admin (etapa 3)
-4. Página `/sobre` (etapa 4)
-5. Refinos do Lab de Testes (etapa 6)
-6. Auditor IA NVIDIA (etapa 5) — depende da chave
-
-Confirma para eu seguir?
-
-&nbsp;
-
-Menu de pizza para todos as abas (admin só aparece pra quem é admin)
-
-Peça minha API de IA do Nvidia Build pra usar agentes de IA pra verificar o BOLETIM DE URNA também. 
-
-Verifique logs de erro. Faça testes em todo código também. Otimize memória. 
-
-Permita registro IPFS/ blockchain EVM até as de teste do lado do usuário (após isso o site vai mostrar o link) 
+- `src/routes/admin.tsx` (chaves multi-ano, moderação melhorada, API docs, exports)
+- `src/routes/testes.tsx` (simulação, BUs salvos, terminal, gateways)
+- `src/routes/api/public/hooks/sync-chaves-tse.ts` (2020/2022)
+- `src/routes/api/public/v1/*.ts` (novos endpoints read-only)
+- `src/lib/decentralized-anchor.ts` (Nostr robusto + IPFS gateways)
+- `src/components/BuTerminal.tsx` (novo)
+- `src/components/BrazilMap.tsx` (fix re-mount)
+- `src/lib/validar-bu.functions.ts` (devolver `etapas[]`)
+- Migração SQL: tabela `bus_teste_salvos`.
+- Deps: `jspdf` para export PDF.

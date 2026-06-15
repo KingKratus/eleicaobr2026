@@ -136,15 +136,11 @@ export const validarBU = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (existente) {
-      return {
-        sucesso: false,
-        codigo: "DUPLICADO",
-        erro: "Este Boletim de Urna já foi enviado anteriormente.",
-        bu_id: existente.id,
-      };
+      log("warn", `BU duplicado · id=${existente.id}`);
+      return { sucesso: false, codigo: "DUPLICADO", erro: "Este Boletim de Urna já foi enviado anteriormente.", bu_id: existente.id, etapas };
     }
+    log("ok", "Sem duplicata · gravando…");
 
-    // ── Gravar
     const boletim = {
       user_id: userId,
       ano_eleicao: ano_bu,
@@ -181,8 +177,10 @@ export const validarBU = createServerFn({ method: "POST" })
       .single();
 
     if (dbErr || !inserted) {
-      return { sucesso: false, codigo: "ERRO_DB", erro: dbErr?.message ?? "Falha ao gravar BU." };
+      log("err", `INSERT falhou: ${dbErr?.message}`);
+      return { sucesso: false, codigo: "ERRO_DB", erro: dbErr?.message ?? "Falha ao gravar BU.", etapas };
     }
+    log("ok", `BU gravado · id=${inserted.id} · totais agregados via trigger`);
 
     return {
       sucesso: true,
@@ -192,6 +190,8 @@ export const validarBU = createServerFn({ method: "POST" })
       uf: sigla_uf,
       zona,
       secao,
+      hash_final,
       cargos_apurados: votos.cargos.length,
+      etapas,
     };
   });

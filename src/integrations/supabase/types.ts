@@ -140,6 +140,39 @@ export type Database = {
         }
         Relationships: []
       }
+      bus_teste_salvos: {
+        Row: {
+          ano_eleicao: number | null
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          qrs: Json
+          sigla_uf: string | null
+          user_id: string
+        }
+        Insert: {
+          ano_eleicao?: number | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          qrs: Json
+          sigla_uf?: string | null
+          user_id: string
+        }
+        Update: {
+          ano_eleicao?: number | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          qrs?: Json
+          sigla_uf?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       chaves_tse: {
         Row: {
           abrangencia: string

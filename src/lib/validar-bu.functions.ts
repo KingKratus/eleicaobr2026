@@ -23,11 +23,16 @@ export const validarBU = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { qr_strings, modo_teste } = data;
     const userId = context.userId;
+    const etapas: { ts: number; level: "info" | "ok" | "warn" | "err"; text: string }[] = [];
+    const log = (level: "info" | "ok" | "warn" | "err", text: string) => etapas.push({ ts: Date.now(), level, text });
+    log("info", `Recebidos ${qr_strings.length} QR Code(s) · modo_teste=${modo_teste}`);
 
     const parsed = parseQRs(qr_strings);
     if (parsed.erro) {
-      return { sucesso: false, codigo: "PARSE_ERRO", erro: parsed.erro };
+      log("err", `parseQRs falhou: ${parsed.erro}`);
+      return { sucesso: false, codigo: "PARSE_ERRO", erro: parsed.erro, etapas };
     }
+    log("ok", `parseQRs: ${parsed.qr_meta.length} QR(s), ${parsed.votos.cargos.length} cargo(s)`);
     const { campos, hash_final, assinatura, conteudo_completo, votos, cadeia_hash_valida, qr_meta } = parsed;
 
     if (!cadeia_hash_valida) {

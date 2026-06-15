@@ -82,7 +82,7 @@ export default function BrazilMap({ porUf, maxUf, ufSelecionada, onSelectUf }: P
       />
       {geo && (
         <>
-          <GeoJSON data={geo} style={style as any} onEachFeature={onEach} key={`${ufSelecionada}-${maxUf}`} />
+          <GeoJSON data={geo} style={style as any} onEachFeature={onEach} />
           <FitToFeatures geo={geo} ufSelecionada={ufSelecionada} />
         </>
       )}
@@ -95,21 +95,28 @@ function FitToFeatures({ geo, ufSelecionada }: { geo: FeatureCollection; ufSelec
   const fittedAll = useRef(false);
 
   useEffect(() => {
-    if (!ufSelecionada) {
-      if (!fittedAll.current) {
-        const L = (window as any).L;
-        const layer = L.geoJSON(geo);
-        map.fitBounds(layer.getBounds(), { padding: [10, 10] });
-        fittedAll.current = true;
-      }
-      return;
-    }
-    const feat = geo.features.find((f) => NOME_TO_UF[(f.properties as any)?.name] === ufSelecionada);
-    if (feat) {
-      const L = (window as any).L;
-      const layer = L.geoJSON(feat);
-      map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-    }
+    const L = (window as any).L;
+    if (!L || !map) return;
+    let cancelled = false;
+    const id = window.setTimeout(() => {
+      if (cancelled) return;
+      try {
+        if (!ufSelecionada) {
+          if (!fittedAll.current) {
+            const layer = L.geoJSON(geo);
+            map.fitBounds(layer.getBounds(), { padding: [10, 10], animate: false });
+            fittedAll.current = true;
+          }
+          return;
+        }
+        const feat = geo.features.find((f) => NOME_TO_UF[(f.properties as any)?.name] === ufSelecionada);
+        if (feat) {
+          const layer = L.geoJSON(feat);
+          map.fitBounds(layer.getBounds(), { padding: [20, 20], animate: false });
+        }
+      } catch { /* leaflet pode estar desmontando */ }
+    }, 50);
+    return () => { cancelled = true; window.clearTimeout(id); };
   }, [ufSelecionada, geo, map]);
 
   return null;

@@ -19,7 +19,10 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as CapturarRouteImport } from './routes/capturar'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicV1TotaisRouteImport } from './routes/api/public/v1/totais'
+import { Route as ApiPublicV1CoberturaRouteImport } from './routes/api/public/v1/cobertura'
 import { Route as ApiPublicHooksSyncChavesTseRouteImport } from './routes/api/public/hooks/sync-chaves-tse'
+import { Route as ApiPublicV1BoletinsIdRouteImport } from './routes/api/public/v1/boletins.$id'
 
 const TestesRoute = TestesRouteImport.update({
   id: '/testes',
@@ -71,12 +74,27 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1TotaisRoute = ApiPublicV1TotaisRouteImport.update({
+  id: '/api/public/v1/totais',
+  path: '/api/public/v1/totais',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1CoberturaRoute = ApiPublicV1CoberturaRouteImport.update({
+  id: '/api/public/v1/cobertura',
+  path: '/api/public/v1/cobertura',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSyncChavesTseRoute =
   ApiPublicHooksSyncChavesTseRouteImport.update({
     id: '/api/public/hooks/sync-chaves-tse',
     path: '/api/public/hooks/sync-chaves-tse',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicV1BoletinsIdRoute = ApiPublicV1BoletinsIdRouteImport.update({
+  id: '/api/public/v1/boletins/$id',
+  path: '/api/public/v1/boletins/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -90,6 +108,9 @@ export interface FileRoutesByFullPath {
   '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
   '/api/public/hooks/sync-chaves-tse': typeof ApiPublicHooksSyncChavesTseRoute
+  '/api/public/v1/cobertura': typeof ApiPublicV1CoberturaRoute
+  '/api/public/v1/totais': typeof ApiPublicV1TotaisRoute
+  '/api/public/v1/boletins/$id': typeof ApiPublicV1BoletinsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -103,6 +124,9 @@ export interface FileRoutesByTo {
   '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
   '/api/public/hooks/sync-chaves-tse': typeof ApiPublicHooksSyncChavesTseRoute
+  '/api/public/v1/cobertura': typeof ApiPublicV1CoberturaRoute
+  '/api/public/v1/totais': typeof ApiPublicV1TotaisRoute
+  '/api/public/v1/boletins/$id': typeof ApiPublicV1BoletinsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -117,6 +141,9 @@ export interface FileRoutesById {
   '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
   '/api/public/hooks/sync-chaves-tse': typeof ApiPublicHooksSyncChavesTseRoute
+  '/api/public/v1/cobertura': typeof ApiPublicV1CoberturaRoute
+  '/api/public/v1/totais': typeof ApiPublicV1TotaisRoute
+  '/api/public/v1/boletins/$id': typeof ApiPublicV1BoletinsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,6 +159,9 @@ export interface FileRouteTypes {
     | '/sobre'
     | '/testes'
     | '/api/public/hooks/sync-chaves-tse'
+    | '/api/public/v1/cobertura'
+    | '/api/public/v1/totais'
+    | '/api/public/v1/boletins/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -145,6 +175,9 @@ export interface FileRouteTypes {
     | '/sobre'
     | '/testes'
     | '/api/public/hooks/sync-chaves-tse'
+    | '/api/public/v1/cobertura'
+    | '/api/public/v1/totais'
+    | '/api/public/v1/boletins/$id'
   id:
     | '__root__'
     | '/'
@@ -158,6 +191,9 @@ export interface FileRouteTypes {
     | '/sobre'
     | '/testes'
     | '/api/public/hooks/sync-chaves-tse'
+    | '/api/public/v1/cobertura'
+    | '/api/public/v1/totais'
+    | '/api/public/v1/boletins/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -172,6 +208,9 @@ export interface RootRouteChildren {
   SobreRoute: typeof SobreRoute
   TestesRoute: typeof TestesRoute
   ApiPublicHooksSyncChavesTseRoute: typeof ApiPublicHooksSyncChavesTseRoute
+  ApiPublicV1CoberturaRoute: typeof ApiPublicV1CoberturaRoute
+  ApiPublicV1TotaisRoute: typeof ApiPublicV1TotaisRoute
+  ApiPublicV1BoletinsIdRoute: typeof ApiPublicV1BoletinsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -246,11 +285,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/totais': {
+      id: '/api/public/v1/totais'
+      path: '/api/public/v1/totais'
+      fullPath: '/api/public/v1/totais'
+      preLoaderRoute: typeof ApiPublicV1TotaisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/cobertura': {
+      id: '/api/public/v1/cobertura'
+      path: '/api/public/v1/cobertura'
+      fullPath: '/api/public/v1/cobertura'
+      preLoaderRoute: typeof ApiPublicV1CoberturaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sync-chaves-tse': {
       id: '/api/public/hooks/sync-chaves-tse'
       path: '/api/public/hooks/sync-chaves-tse'
       fullPath: '/api/public/hooks/sync-chaves-tse'
       preLoaderRoute: typeof ApiPublicHooksSyncChavesTseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/boletins/$id': {
+      id: '/api/public/v1/boletins/$id'
+      path: '/api/public/v1/boletins/$id'
+      fullPath: '/api/public/v1/boletins/$id'
+      preLoaderRoute: typeof ApiPublicV1BoletinsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -268,17 +328,10 @@ const rootRouteChildren: RootRouteChildren = {
   SobreRoute: SobreRoute,
   TestesRoute: TestesRoute,
   ApiPublicHooksSyncChavesTseRoute: ApiPublicHooksSyncChavesTseRoute,
+  ApiPublicV1CoberturaRoute: ApiPublicV1CoberturaRoute,
+  ApiPublicV1TotaisRoute: ApiPublicV1TotaisRoute,
+  ApiPublicV1BoletinsIdRoute: ApiPublicV1BoletinsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

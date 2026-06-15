@@ -27,13 +27,13 @@ function candidateVrchs(): { vrch: string; ano: number }[] {
   const now = new Date();
   const ano = now.getUTCFullYear();
   const list: { vrch: string; ano: number }[] = [];
-  for (const a of [ano, ano + 1]) {
+  // Eleições conhecidas (2020/2022/2024) + ano corrente e próximo (2026+).
+  const anos = new Set<number>([2020, 2022, 2024, ano, ano + 1]);
+  for (const a of anos) {
     list.push({ vrch: `${a}.1`, ano: a });
     list.push({ vrch: `${a}.2`, ano: a });
+    list.push({ vrch: `${a}.3`, ano: a }); // 2º turno em alguns casos
   }
-  // VRCHs publicados historicamente para 2024 (mantém ativo o lookup)
-  list.push({ vrch: "2024.1", ano: 2024 });
-  list.push({ vrch: "2024.2", ano: 2024 });
   return list;
 }
 

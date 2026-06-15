@@ -23,76 +23,66 @@ export const validarBU = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { qr_strings, modo_teste } = data;
     const userId = context.userId;
+    const etapas: { ts: number; level: "info" | "ok" | "warn" | "err"; text: string }[] = [];
+    const log = (level: "info" | "ok" | "warn" | "err", text: string) => etapas.push({ ts: Date.now(), level, text });
+    log("info", `Recebidos ${qr_strings.length} QR Code(s) · modo_teste=${modo_teste}`);
 
     const parsed = parseQRs(qr_strings);
     if (parsed.erro) {
-      return { sucesso: false, codigo: "PARSE_ERRO", erro: parsed.erro };
+      log("err", `parseQRs falhou: ${parsed.erro}`);
+      return { sucesso: false, codigo: "PARSE_ERRO", erro: parsed.erro, etapas };
     }
+    log("ok", `parseQRs: ${parsed.qr_meta.length} QR(s), ${parsed.votos.cargos.length} cargo(s)`);
     const { campos, hash_final, assinatura, conteudo_completo, votos, cadeia_hash_valida, qr_meta } = parsed;
 
     if (!cadeia_hash_valida) {
-      return {
-        sucesso: false,
-        codigo: "HASH_INVALIDO",
-        erro: "Cadeia de hashes SHA-512 inválida — algum QR Code está corrompido ou fora de ordem.",
-        qr_meta,
-      };
+      log("err", "Cadeia SHA-512 inválida.");
+      return { sucesso: false, codigo: "HASH_INVALIDO", erro: "Cadeia de hashes SHA-512 inválida — algum QR Code está corrompido ou fora de ordem.", qr_meta, etapas };
     }
+    log("ok", "Cadeia SHA-512 entre QRs íntegra.");
 
-    // ── Validar ano da eleição
     const dtpl = campos["DTPL"] ?? "";
     const ano_bu = parseInt(dtpl.substring(0, 4), 10);
     if (Number.isNaN(ano_bu)) {
-      return { sucesso: false, codigo: "DTPL_INVALIDO", erro: "Campo DTPL ausente ou inválido." };
+      log("err", "DTPL inválido.");
+      return { sucesso: false, codigo: "DTPL_INVALIDO", erro: "Campo DTPL ausente ou inválido.", etapas };
     }
+    log("info", `DTPL=${dtpl} (ano=${ano_bu}) · FASE=${campos["FASE"]} · UF=${campos["UNFE"]}`);
 
     if (!modo_teste) {
       if (ano_bu !== ANO_PRODUCAO) {
-        return {
-          sucesso: false,
-          codigo: "ANO_INVALIDO",
-          erro: `Boletim rejeitado: ano ${ano_bu} não é válido para 2026. Use a Aba de Testes para BUs de outros anos.`,
-        };
+        log("err", `Ano ${ano_bu} ≠ produção ${ANO_PRODUCAO}.`);
+        return { sucesso: false, codigo: "ANO_INVALIDO", erro: `Boletim rejeitado: ano ${ano_bu} não é válido para 2026. Use a Aba de Testes para BUs de outros anos.`, etapas };
       }
       if (campos["FASE"] !== "O") {
-        return {
-          sucesso: false,
-          codigo: "FASE_INVALIDA",
-          erro: `Boletim rejeitado: fase "${campos["FASE"]}" não é permitida em produção (apenas "O" - Oficial).`,
-        };
+        log("err", `Fase ${campos["FASE"]} bloqueada em produção.`);
+        return { sucesso: false, codigo: "FASE_INVALIDA", erro: `Boletim rejeitado: fase "${campos["FASE"]}" não é permitida em produção (apenas "O" - Oficial).`, etapas };
       }
     } else {
       if (!ANOS_TESTE.includes(ano_bu)) {
-        return {
-          sucesso: false,
-          codigo: "ANO_TESTE_INVALIDO",
-          erro: `Aba de testes aceita apenas BUs de 2022 ou 2024 (recebido: ${ano_bu}).`,
-        };
+        log("err", `Ano ${ano_bu} fora dos anos de teste ${ANOS_TESTE.join("/")}.`);
+        return { sucesso: false, codigo: "ANO_TESTE_INVALIDO", erro: `Aba de testes aceita apenas BUs de 2022 ou 2024 (recebido: ${ano_bu}).`, etapas };
       }
     }
 
-    // ── Bloqueio de validação cruzada: ano do VRCH precisa bater com ano do BU
     const vrch_raw = campos["VRCH"] ?? "";
     const vrch_ano_match = vrch_raw.match(/^(\d{4})/);
     const vrch_ano = vrch_ano_match ? parseInt(vrch_ano_match[1], 10) : null;
     if (vrch_ano && vrch_ano !== ano_bu) {
-      return {
-        sucesso: false,
-        codigo: "VRCH_INCOMPATIVEL",
-        erro: `Versão de chave VRCH=${vrch_raw} (eleição ${vrch_ano}) não corresponde ao ano do BU (${ano_bu}). Validação cruzada bloqueada.`,
-      };
+      log("err", `VRCH=${vrch_raw} incompatível com DTPL=${ano_bu}.`);
+      return { sucesso: false, codigo: "VRCH_INCOMPATIVEL", erro: `Versão de chave VRCH=${vrch_raw} (eleição ${vrch_ano}) não corresponde ao ano do BU (${ano_bu}). Validação cruzada bloqueada.`, etapas };
     }
 
     if (!assinatura) {
-      return { sucesso: false, codigo: "SEM_ASSINATURA", erro: "Último QR Code não contém o campo ASSI (assinatura)." };
+      log("err", "Sem assinatura ASSI.");
+      return { sucesso: false, codigo: "SEM_ASSINATURA", erro: "Último QR Code não contém o campo ASSI (assinatura).", etapas };
     }
 
-
-    // ── Buscar chave pública TSE
     const versao_chave = campos["VRCH"];
     const sigla_uf = (campos["UNFE"] ?? "BR").toUpperCase();
     const tipo_eleicao = campos["ORLC"] === "COM" ? "COMUNITARIA" : "LEGAL";
     const fase = campos["FASE"] ?? "O";
+    log("info", `Buscando chave VRCH=${versao_chave} / ${sigla_uf} / ${tipo_eleicao} / ${fase}`);
 
     const { data: chaveRow, error: chaveErr } = await supabaseAdmin
       .from("chaves_tse")
@@ -105,14 +95,11 @@ export const validarBU = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (chaveErr || !chaveRow) {
-      return {
-        sucesso: false,
-        codigo: "CHAVE_NAO_ENCONTRADA",
-        erro: `Chave pública TSE não cadastrada para versão ${versao_chave} / UF ${sigla_uf} / fase ${fase}. Peça ao administrador para importar as chaves.`,
-      };
+      log("err", "Chave pública TSE não cadastrada.");
+      return { sucesso: false, codigo: "CHAVE_NAO_ENCONTRADA", erro: `Chave pública TSE não cadastrada para versão ${versao_chave} / UF ${sigla_uf} / fase ${fase}. Peça ao administrador para importar as chaves.`, etapas };
     }
+    log("ok", "Chave pública encontrada.");
 
-    // ── Verificar assinatura Ed25519
     let assinatura_valida = false;
     try {
       const pub = hexToBytes(chaveRow.chave_publica_hex);
@@ -120,16 +107,15 @@ export const validarBU = createServerFn({ method: "POST" })
       const sig = hexToBytes(assinatura);
       assinatura_valida = await ed.verifyAsync(sig, hash, pub);
     } catch (e: any) {
-      return { sucesso: false, codigo: "ERRO_CRIPTO", erro: `Falha na verificação criptográfica: ${e.message}` };
+      log("err", `Erro cripto: ${e.message}`);
+      return { sucesso: false, codigo: "ERRO_CRIPTO", erro: `Falha na verificação criptográfica: ${e.message}`, etapas };
     }
 
     if (!assinatura_valida) {
-      return {
-        sucesso: false,
-        codigo: "ASSINATURA_INVALIDA",
-        erro: "Assinatura digital inválida — este boletim pode ter sido adulterado.",
-      };
+      log("err", "Assinatura Ed25519 inválida.");
+      return { sucesso: false, codigo: "ASSINATURA_INVALIDA", erro: "Assinatura digital inválida — este boletim pode ter sido adulterado.", etapas };
     }
+    log("ok", `Assinatura Ed25519 válida · hash=${hash_final.slice(0, 16)}…`);
 
     // ── Verificar duplicata
     const id_carga = campos["IDCA"] ?? "";
@@ -150,15 +136,11 @@ export const validarBU = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (existente) {
-      return {
-        sucesso: false,
-        codigo: "DUPLICADO",
-        erro: "Este Boletim de Urna já foi enviado anteriormente.",
-        bu_id: existente.id,
-      };
+      log("warn", `BU duplicado · id=${existente.id}`);
+      return { sucesso: false, codigo: "DUPLICADO", erro: "Este Boletim de Urna já foi enviado anteriormente.", bu_id: existente.id, etapas };
     }
+    log("ok", "Sem duplicata · gravando…");
 
-    // ── Gravar
     const boletim = {
       user_id: userId,
       ano_eleicao: ano_bu,
@@ -195,8 +177,10 @@ export const validarBU = createServerFn({ method: "POST" })
       .single();
 
     if (dbErr || !inserted) {
-      return { sucesso: false, codigo: "ERRO_DB", erro: dbErr?.message ?? "Falha ao gravar BU." };
+      log("err", `INSERT falhou: ${dbErr?.message}`);
+      return { sucesso: false, codigo: "ERRO_DB", erro: dbErr?.message ?? "Falha ao gravar BU.", etapas };
     }
+    log("ok", `BU gravado · id=${inserted.id} · totais agregados via trigger`);
 
     return {
       sucesso: true,
@@ -206,6 +190,8 @@ export const validarBU = createServerFn({ method: "POST" })
       uf: sigla_uf,
       zona,
       secao,
+      hash_final,
       cargos_apurados: votos.cargos.length,
+      etapas,
     };
   });

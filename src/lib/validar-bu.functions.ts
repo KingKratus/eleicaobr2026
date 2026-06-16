@@ -98,6 +98,10 @@ export const validarBU = createServerFn({ method: "POST" })
       log("err", "Chave pública TSE não cadastrada.");
       return { sucesso: false, codigo: "CHAVE_NAO_ENCONTRADA", erro: `Chave pública TSE não cadastrada para versão ${versao_chave} / UF ${sigla_uf} / fase ${fase}. Peça ao administrador para importar as chaves.`, etapas };
     }
+    if (!chaveRow.chave_publica_hex) {
+      log("err", "Chave pública TSE pendente (apenas hash SHA-512 cadastrado).");
+      return { sucesso: false, codigo: "CHAVE_PENDENTE", erro: `Apenas o hash SHA-512 desta chave está cadastrado. Faça upload do arquivo .pub correspondente no painel admin para habilitar a validação.`, etapas };
+    }
     log("ok", "Chave pública encontrada.");
 
     let assinatura_valida = false;

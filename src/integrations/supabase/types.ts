@@ -177,10 +177,12 @@ export type Database = {
         Row: {
           abrangencia: string
           ano_eleicao: number
+          arquivo_nome: string | null
           ativo: boolean
-          chave_publica_hex: string
+          chave_publica_hex: string | null
           created_at: string
           fase: string
+          hash_sha512_pub: string | null
           id: number
           sigla_uf: string
           tipo_eleicao: string
@@ -194,10 +196,12 @@ export type Database = {
         Insert: {
           abrangencia?: string
           ano_eleicao: number
+          arquivo_nome?: string | null
           ativo?: boolean
-          chave_publica_hex: string
+          chave_publica_hex?: string | null
           created_at?: string
           fase: string
+          hash_sha512_pub?: string | null
           id?: number
           sigla_uf: string
           tipo_eleicao: string
@@ -211,10 +215,12 @@ export type Database = {
         Update: {
           abrangencia?: string
           ano_eleicao?: number
+          arquivo_nome?: string | null
           ativo?: boolean
-          chave_publica_hex?: string
+          chave_publica_hex?: string | null
           created_at?: string
           fase?: string
+          hash_sha512_pub?: string | null
           id?: number
           sigla_uf?: string
           tipo_eleicao?: string

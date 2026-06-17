@@ -82,12 +82,14 @@ export const validarBU = createServerFn({ method: "POST" })
     const sigla_uf = (campos["UNFE"] ?? "BR").toUpperCase();
     const tipo_eleicao = campos["ORLC"] === "COM" ? "COMUNITARIA" : "LEGAL";
     const fase = campos["FASE"] ?? "O";
-    log("info", `Buscando chave VRCH=${versao_chave} / ${sigla_uf} / ${tipo_eleicao} / ${fase}`);
+    log("info", `Buscando chave ano=${ano_bu} / ${sigla_uf} / ${tipo_eleicao} / ${fase} (VRCH=${versao_chave})`);
 
+    // VRCH no BU é um timestamp (ex.: 20220829), não a "versao_chave" do nosso cadastro.
+    // Localizamos a chave por ano_eleicao + UF + tipo + fase, que é a chave natural do TSE.
     const { data: chaveRow, error: chaveErr } = await supabaseAdmin
       .from("chaves_tse")
-      .select("chave_publica_hex")
-      .eq("versao_chave", versao_chave)
+      .select("chave_publica_hex, hash_sha512_pub, versao_chave, arquivo_nome")
+      .eq("ano_eleicao", ano_bu)
       .eq("sigla_uf", sigla_uf)
       .eq("tipo_eleicao", tipo_eleicao)
       .eq("fase", fase)
@@ -96,7 +98,7 @@ export const validarBU = createServerFn({ method: "POST" })
 
     if (chaveErr || !chaveRow) {
       log("err", "Chave pública TSE não cadastrada.");
-      return { sucesso: false, codigo: "CHAVE_NAO_ENCONTRADA", erro: `Chave pública TSE não cadastrada para versão ${versao_chave} / UF ${sigla_uf} / fase ${fase}. Peça ao administrador para importar as chaves.`, etapas };
+      return { sucesso: false, codigo: "CHAVE_NAO_ENCONTRADA", erro: `Chave pública TSE não cadastrada para ano ${ano_bu} / UF ${sigla_uf} / fase ${fase}. Peça ao administrador para importar as chaves.`, etapas };
     }
     if (!chaveRow.chave_publica_hex) {
       log("err", "Chave pública TSE pendente (apenas hash SHA-512 cadastrado).");

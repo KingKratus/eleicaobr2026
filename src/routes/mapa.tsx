@@ -127,7 +127,7 @@ function MapaPage() {
               onChange={(e) => navigate({ search: { teste: 1, ano: Number(e.target.value) }, replace: true })}
               className="rounded-sm border border-border bg-background px-2 text-[11px]"
             >
-              {ANOS_TESTE.map((a) => <option key={a} value={a}>{a}</option>)}
+              {anosOpcoes.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
           )}
         </div>

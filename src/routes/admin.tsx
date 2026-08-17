@@ -42,6 +42,7 @@ function AdminPage() {
   return (
     <AppShell>
       <ChavesTSE />
+      <ChavesPubPanel />
       <Moderacao />
       <ApiDocs />
     </AppShell>

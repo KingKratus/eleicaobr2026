@@ -171,7 +171,7 @@ export const validarBU = createServerFn({ method: "POST" })
       conteudo_completo,
       hash_final,
       assinatura,
-      versao_chave,
+      versao_chave: versao_chave || chaveRow.versao_chave || String(ano_bu),
       assinatura_valida: true,
       status: "validado" as const,
       modo_teste,

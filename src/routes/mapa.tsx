@@ -30,14 +30,29 @@ const BrazilMap = lazy(() => import("@/components/BrazilMap"));
 type UfRow = { uf: string; bus: number; municipios: number };
 type MunRow = { municipio_num: number; municipio_nome: string | null; total_bus_validados: number };
 
-const ANOS_TESTE = [2024, 2022, 2020];
+const ANOS_TESTE = [2026, 2024, 2022, 2020, 2018];
 
 function MapaPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
 
   const teste = search.teste === 1;
-  const ano = search.ano ?? (teste ? 2024 : 2026);
+
+  // Anos que realmente têm boletins nesta camada
+  const { data: anosDisp = [] } = useQuery({
+    queryKey: ["anos-disponiveis", teste],
+    queryFn: async () => {
+      const { data } = await (supabase as any).rpc("anos_disponiveis", { _teste: teste });
+      return (data ?? []) as { ano: number; bus: number }[];
+    },
+    staleTime: 60_000,
+  });
+
+  const anosOpcoes = Array.from(
+    new Set([...anosDisp.map((a) => Number(a.ano)), ...ANOS_TESTE]),
+  ).sort((a, b) => b - a);
+
+  const ano = search.ano ?? (teste ? Number(anosDisp[0]?.ano ?? 2024) : 2026);
 
   const [ufSelecionada, setUfSelecionada] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -80,7 +95,7 @@ function MapaPage() {
   const maxUf = Math.max(1, ...Object.values(porUf));
 
   function setModo(next: boolean) {
-    navigate({ search: next ? { teste: 1, ano: 2024 } : {}, replace: true });
+    navigate({ search: next ? { teste: 1 } : {}, replace: true });
   }
 
   return (
@@ -112,7 +127,7 @@ function MapaPage() {
               onChange={(e) => navigate({ search: { teste: 1, ano: Number(e.target.value) }, replace: true })}
               className="rounded-sm border border-border bg-background px-2 text-[11px]"
             >
-              {ANOS_TESTE.map((a) => <option key={a} value={a}>{a}</option>)}
+              {anosOpcoes.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
           )}
         </div>

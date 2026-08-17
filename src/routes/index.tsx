@@ -55,7 +55,8 @@ function PainelPage() {
       ]);
       return { bus: bus ?? 0, cob: cob ?? 0, vol: vol ?? 0 };
     },
-    refetchInterval: 15000,
+    staleTime: 30000,
+    refetchInterval: 60000,
   });
 
   return (

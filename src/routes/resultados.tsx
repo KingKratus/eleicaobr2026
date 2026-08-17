@@ -25,7 +25,8 @@ function ResultadosPage() {
       const { data } = await q;
       return data ?? [];
     },
-    refetchInterval: 10000,
+    staleTime: 20000,
+    refetchInterval: 30000,
   });
 
   const total = (data ?? []).reduce((s, r) => s + Number(r.total_votos), 0);

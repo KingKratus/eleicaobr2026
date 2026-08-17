@@ -325,18 +325,17 @@ export function ChavesPubPanel() {
         {!fila?.length ? (
           <p className="text-[11px] text-muted-foreground">Nenhuma chave aguardando revisão.</p>
         ) : (
-          <ul className="space-y-2">
+          <>
+          <button
+            disabled={busy || !fila.some((p) => p.confere)}
+            onClick={aprovarTodasConferidas}
+            className="mb-2 flex w-full items-center justify-center gap-1 rounded-sm bg-success px-3 py-2 text-[11px] font-bold uppercase text-background disabled:opacity-50"
+          >
+            <Check className="size-3" /> Aprovar todas conferidas ({fila.filter((p) => p.confere).length})
+          </button>
+          <ul className="max-h-[420px] space-y-2 overflow-y-auto">
             {fila.map((p) => (
-              <li key={p.id} className="rounded-sm border border-border p-2 text-[10px]">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold">
-                    {p.ano_eleicao}/{p.sigla_uf}/{p.fase} · {p.tipo_eleicao}
-                  </span>
-                  <span className={p.confere ? "font-bold text-success" : "font-bold text-warning"}>
-                    {p.confere ? "SHA confere" : "sem referência oficial"}
-                  </span>
-                </div>
-                <div className="mt-1 break-all font-mono text-muted-foreground">
+
                   calc {p.sha512_calculado.slice(0, 40)}…
                 </div>
                 {p.sha512_esperado && (

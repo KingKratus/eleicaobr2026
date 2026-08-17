@@ -167,8 +167,10 @@ export const validarBU = createServerFn({ method: "POST" })
       id_carga,
       versao_software: campos["VERS"] ?? null,
       origem: campos["ORIG"] ?? null,
-      qr_raw: qr_strings.map((q, i) => ({ idx: i + 1, conteudo: q })),
-      conteudo_completo,
+      // Economia agressiva: guardamos apenas os QRs crus (array compacto de strings).
+      // `conteudo_completo` é 100% recomputável por parseQRs(qr_raw) — não é persistido.
+      qr_raw: qr_strings,
+      conteudo_completo: null,
       hash_final,
       assinatura,
       versao_chave: versao_chave || chaveRow.versao_chave || String(ano_bu),

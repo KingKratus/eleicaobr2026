@@ -33,8 +33,9 @@ function PainelPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("totais_cargo")
-        .select("*")
+        .select("id,candidato_numero,total_votos")
         .eq("ano_eleicao", 2026)
+        .eq("modo_teste", false)
         .eq("cargo_codigo", 1)
         .eq("num_turno", 1)
         .is("sigla_uf", null)
@@ -49,12 +50,13 @@ function PainelPage() {
     queryFn: async () => {
       const [{ count: bus }, { count: cob }, { count: vol }] = await Promise.all([
         supabase.from("boletins").select("id", { count: "exact", head: true }).eq("status", "validado").eq("modo_teste", false),
-        supabase.from("cobertura").select("id", { count: "exact", head: true }),
+        supabase.from("cobertura").select("id", { count: "exact", head: true }).eq("modo_teste", false),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
       ]);
       return { bus: bus ?? 0, cob: cob ?? 0, vol: vol ?? 0 };
     },
-    refetchInterval: 15000,
+    staleTime: 30000,
+    refetchInterval: 60000,
   });
 
   return (

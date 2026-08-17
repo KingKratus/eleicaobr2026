@@ -23,7 +23,7 @@ export type Database = {
           blockchain_explorer_url: string | null
           blockchain_tx: string | null
           comparecimento: number | null
-          conteudo_completo: string
+          conteudo_completo: string | null
           created_at: string
           dt_abertura: string | null
           dt_fechamento: string | null
@@ -64,7 +64,7 @@ export type Database = {
           blockchain_explorer_url?: string | null
           blockchain_tx?: string | null
           comparecimento?: number | null
-          conteudo_completo: string
+          conteudo_completo?: string | null
           created_at?: string
           dt_abertura?: string | null
           dt_fechamento?: string | null
@@ -105,7 +105,7 @@ export type Database = {
           blockchain_explorer_url?: string | null
           blockchain_tx?: string | null
           comparecimento?: number | null
-          conteudo_completo?: string
+          conteudo_completo?: string | null
           created_at?: string
           dt_abertura?: string | null
           dt_fechamento?: string | null
@@ -351,6 +351,7 @@ export type Database = {
           ano_eleicao: number
           fase: string
           id: number
+          modo_teste: boolean
           municipio_nome: string | null
           municipio_num: number
           percentual: number
@@ -363,6 +364,7 @@ export type Database = {
           ano_eleicao: number
           fase: string
           id?: number
+          modo_teste?: boolean
           municipio_nome?: string | null
           municipio_num: number
           percentual?: number
@@ -375,6 +377,7 @@ export type Database = {
           ano_eleicao?: number
           fase?: string
           id?: number
+          modo_teste?: boolean
           municipio_nome?: string | null
           municipio_num?: number
           percentual?: number
@@ -419,6 +422,7 @@ export type Database = {
           cargo_codigo: number
           fase: string
           id: number
+          modo_teste: boolean
           municipio_num: number | null
           num_turno: number
           sigla_uf: string | null
@@ -432,6 +436,7 @@ export type Database = {
           cargo_codigo: number
           fase: string
           id?: number
+          modo_teste?: boolean
           municipio_num?: number | null
           num_turno: number
           sigla_uf?: string | null
@@ -445,6 +450,7 @@ export type Database = {
           cargo_codigo?: number
           fase?: string
           id?: number
+          modo_teste?: boolean
           municipio_num?: number | null
           num_turno?: number
           sigla_uf?: string | null
@@ -486,6 +492,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      mapa_uf: {
+        Args: { _ano: number; _teste?: boolean }
+        Returns: {
+          bus: number
+          municipios: number
+          uf: string
+        }[]
       }
     }
     Enums: {

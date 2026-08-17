@@ -18,14 +18,15 @@ function ResultadosPage() {
   const { data } = useQuery({
     queryKey: ["resultados", cargo, turno, uf],
     queryFn: async () => {
-      let q = supabase.from("totais_cargo").select("*")
-        .eq("ano_eleicao", 2026).eq("cargo_codigo", cargo).eq("num_turno", turno)
+      let q = supabase.from("totais_cargo").select("id,candidato_numero,total_votos")
+        .eq("ano_eleicao", 2026).eq("modo_teste", false).eq("cargo_codigo", cargo).eq("num_turno", turno)
         .order("total_votos", { ascending: false }).limit(20);
       q = uf ? q.eq("sigla_uf", uf) : q.is("sigla_uf", null);
       const { data } = await q;
       return data ?? [];
     },
-    refetchInterval: 10000,
+    staleTime: 20000,
+    refetchInterval: 30000,
   });
 
   const total = (data ?? []).reduce((s, r) => s + Number(r.total_votos), 0);

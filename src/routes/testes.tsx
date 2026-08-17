@@ -364,7 +364,7 @@ function SimulacaoApuracao({ bu }: { bu: any }) {
     (async () => {
       const { data } = await supabase.from("totais_cargo")
         .select("cargo_codigo,candidato_numero,total_votos,total_bus_computados")
-        .eq("ano_eleicao", bu.ano_eleicao).eq("sigla_uf", bu.uf)
+        .eq("ano_eleicao", bu.ano_eleicao).eq("sigla_uf", bu.uf).eq("modo_teste", true)
         .order("total_votos", { ascending: false }).limit(10);
       if (!cancel) setTotais(data ?? []);
     })();
@@ -379,9 +379,14 @@ function SimulacaoApuracao({ bu }: { bu: any }) {
       <div className="mb-3 rounded-sm border border-accent/30 bg-card p-3 text-[11px]">
         <p>BU <code className="font-mono">{bu.bu_id?.slice(0, 8)}…</code> agregado em <strong>{bu.uf}</strong>.</p>
         <p className="mt-1 text-muted-foreground">Trigger <code className="font-mono">agregar_totais_bu</code> somou os votos aos totais (modo teste — não afeta produção).</p>
-        <Link to="/resultados" className="mt-2 inline-flex items-center gap-1 font-bold uppercase text-accent">
-          Ver em /resultados <ExternalLink className="size-3" />
-        </Link>
+        <div className="mt-2 flex flex-wrap gap-3">
+          <Link to="/resultados" className="inline-flex items-center gap-1 font-bold uppercase text-accent">
+            Ver em /resultados <ExternalLink className="size-3" />
+          </Link>
+          <Link to="/mapa" search={{ teste: 1, ano: bu.ano_eleicao }} className="inline-flex items-center gap-1 font-bold uppercase text-accent">
+            Ver no mapa (treinamento) <ExternalLink className="size-3" />
+          </Link>
+        </div>
       </div>
       <div>
         <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Top 10 candidatos · {bu.uf}</p>

@@ -20,6 +20,7 @@ export const Route = createFileRoute("/api/public/v1/totais")({
           .from("totais_cargo")
           .select("sigla_uf,cargo_codigo,candidato_numero,total_votos,total_bus_computados")
           .eq("ano_eleicao", ano)
+          .eq("modo_teste", url.searchParams.get("teste") === "1")
           .eq("num_turno", turno);
         if (uf) q = q.eq("sigla_uf", uf.toUpperCase());
         else q = q.is("sigla_uf", null);

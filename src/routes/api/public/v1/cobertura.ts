@@ -12,7 +12,8 @@ export const Route = createFileRoute("/api/public/v1/cobertura")({
         let q = supabaseAdmin
           .from("cobertura")
           .select("sigla_uf,municipio_num,municipio_nome,total_bus_validados,percentual")
-          .eq("ano_eleicao", ano);
+          .eq("ano_eleicao", ano)
+          .eq("modo_teste", url.searchParams.get("teste") === "1");
         if (uf) q = q.eq("sigla_uf", uf.toUpperCase());
         const { data, error } = await q.order("total_bus_validados", { ascending: false }).limit(1000);
         if (error) {

@@ -27,6 +27,7 @@ export function BottomNav() {
       <div className="-mt-10 flex-1 flex justify-center">
         <Link
           to="/capturar"
+          search={{ teste: false }}
           className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/20 ring-4 ring-background transition-transform active:scale-95"
           aria-label="Capturar BU"
         >

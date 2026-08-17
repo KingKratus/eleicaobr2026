@@ -173,6 +173,110 @@ export type Database = {
         }
         Relationships: []
       }
+      chaves_pub_pendentes: {
+        Row: {
+          ano_eleicao: number
+          arquivo_nome: string | null
+          confere: boolean
+          conteudo_hex: string
+          created_at: string
+          enviado_por: string | null
+          fase: string
+          id: string
+          motivo: string | null
+          origem: string
+          revisado_em: string | null
+          revisado_por: string | null
+          sha512_calculado: string
+          sha512_esperado: string | null
+          sigla_uf: string
+          status: string
+          tipo_eleicao: string
+          url_origem: string | null
+        }
+        Insert: {
+          ano_eleicao: number
+          arquivo_nome?: string | null
+          confere?: boolean
+          conteudo_hex: string
+          created_at?: string
+          enviado_por?: string | null
+          fase: string
+          id?: string
+          motivo?: string | null
+          origem?: string
+          revisado_em?: string | null
+          revisado_por?: string | null
+          sha512_calculado: string
+          sha512_esperado?: string | null
+          sigla_uf: string
+          status?: string
+          tipo_eleicao?: string
+          url_origem?: string | null
+        }
+        Update: {
+          ano_eleicao?: number
+          arquivo_nome?: string | null
+          confere?: boolean
+          conteudo_hex?: string
+          created_at?: string
+          enviado_por?: string | null
+          fase?: string
+          id?: string
+          motivo?: string | null
+          origem?: string
+          revisado_em?: string | null
+          revisado_por?: string | null
+          sha512_calculado?: string
+          sha512_esperado?: string | null
+          sigla_uf?: string
+          status?: string
+          tipo_eleicao?: string
+          url_origem?: string | null
+        }
+        Relationships: []
+      }
+      chaves_revalidacao: {
+        Row: {
+          ano_eleicao: number | null
+          chave_id: number | null
+          detalhe: string | null
+          executado_em: string
+          fase: string | null
+          id: number
+          resultado: string
+          sigla_uf: string | null
+        }
+        Insert: {
+          ano_eleicao?: number | null
+          chave_id?: number | null
+          detalhe?: string | null
+          executado_em?: string
+          fase?: string | null
+          id?: number
+          resultado: string
+          sigla_uf?: string | null
+        }
+        Update: {
+          ano_eleicao?: number | null
+          chave_id?: number | null
+          detalhe?: string | null
+          executado_em?: string
+          fase?: string | null
+          id?: number
+          resultado?: string
+          sigla_uf?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chaves_revalidacao_chave_id_fkey"
+            columns: ["chave_id"]
+            isOneToOne: false
+            referencedRelation: "chaves_tse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chaves_tse: {
         Row: {
           abrangencia: string
@@ -184,8 +288,11 @@ export type Database = {
           fase: string
           hash_sha512_pub: string | null
           id: number
+          resultado_revalidacao: string | null
           sigla_uf: string
+          suspeita: boolean
           tipo_eleicao: string
+          ultima_revalidacao: string | null
           ultima_sincronizacao: string | null
           updated_at: string
           url_origem: string | null
@@ -203,8 +310,11 @@ export type Database = {
           fase: string
           hash_sha512_pub?: string | null
           id?: number
+          resultado_revalidacao?: string | null
           sigla_uf: string
+          suspeita?: boolean
           tipo_eleicao: string
+          ultima_revalidacao?: string | null
           ultima_sincronizacao?: string | null
           updated_at?: string
           url_origem?: string | null
@@ -222,8 +332,11 @@ export type Database = {
           fase?: string
           hash_sha512_pub?: string | null
           id?: number
+          resultado_revalidacao?: string | null
           sigla_uf?: string
+          suspeita?: boolean
           tipo_eleicao?: string
+          ultima_revalidacao?: string | null
           ultima_sincronizacao?: string | null
           updated_at?: string
           url_origem?: string | null

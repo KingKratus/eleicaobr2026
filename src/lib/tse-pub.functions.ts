@@ -1,18 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { sha512 } from "@noble/hashes/sha2.js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const HEX32 = /^[0-9a-f]{64}$/i;
-
-function toBytes(hex: string): Uint8Array {
-  const out = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
-  return out;
-}
-function toHex(b: Uint8Array): string {
-  return Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
-}
 
 async function assertMod(context: any) {
   const { data: a } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
@@ -31,72 +21,69 @@ const UploadInput = z.object({
 });
 
 /**
- * Recebe o conteúdo de um arquivo .pub (32 bytes em hex), calcula o SHA-512
- * e compara com o hash oficial já cadastrado antes de ativar a chave.
+ * Recebe o conteúdo de um arquivo .pub (32 bytes em hex), calcula o SHA-512,
+ * compara com o hash oficial cadastrado e enfileira para APROVAÇÃO MANUAL.
+ * Nada é ativado aqui.
  */
 export const uploadChavePub = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => UploadInput.parse(i))
   .handler(async ({ data, context }) => {
     if (!(await assertMod(context))) return { sucesso: false, erro: "Acesso restrito." };
+    const { sha512Hex, toBytes } = await import("./tse-pub.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const hex = data.conteudo_hex.toLowerCase();
-    const sha = toHex(sha512(toBytes(hex)));
+    const sha = sha512Hex(toBytes(hex));
     const uf = data.sigla_uf.toUpperCase();
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("chaves_tse")
-      .select("id, hash_sha512_pub, versao_chave")
+      .select("id, hash_sha512_pub")
       .eq("ano_eleicao", data.ano_eleicao)
       .eq("sigla_uf", uf)
       .eq("fase", data.fase)
       .eq("tipo_eleicao", data.tipo_eleicao)
       .maybeSingle();
 
-    if (row?.hash_sha512_pub && row.hash_sha512_pub.toLowerCase() !== sha) {
+    const esperado = row?.hash_sha512_pub?.toLowerCase() ?? null;
+    const confere = Boolean(esperado && esperado === sha);
+
+    if (esperado && !confere) {
       return {
         sucesso: false,
         codigo: "HASH_DIVERGENTE",
-        erro: "SHA-512 do arquivo não confere com o hash oficial cadastrado. Chave NÃO ativada.",
+        erro: "SHA-512 do arquivo não confere com o hash oficial cadastrado. Nada foi enfileirado.",
         sha512_calculado: sha,
-        sha512_esperado: row.hash_sha512_pub,
+        sha512_esperado: esperado,
       };
     }
-    if (!row?.hash_sha512_pub && !data.forcar) {
+    if (!esperado && !data.forcar) {
       return {
         sucesso: false,
         codigo: "SEM_HASH_REFERENCIA",
-        erro: "Não há hash SHA-512 oficial cadastrado para conferência. Reenvie marcando \"forçar\" para gravar mesmo assim.",
+        erro: "Não há hash SHA-512 oficial cadastrado para conferência. Reenvie marcando \"forçar\" para enfileirar mesmo assim.",
         sha512_calculado: sha,
       };
     }
 
-    const payload = {
-      versao_chave: row?.versao_chave ?? `${data.ano_eleicao}.1`,
-      sigla_uf: uf,
-      tipo_eleicao: data.tipo_eleicao,
-      fase: data.fase,
+    const { error } = await supabaseAdmin.from("chaves_pub_pendentes").insert({
       ano_eleicao: data.ano_eleicao,
-      chave_publica_hex: hex,
-      hash_sha512_pub: row?.hash_sha512_pub ?? sha,
-      arquivo_nome: data.arquivo_nome,
-      abrangencia: uf === "ZZ" ? "BR" : "UF",
-      ativo: true,
-      ultima_sincronizacao: new Date().toISOString(),
-    };
-
-    const { error } = row
-      ? await supabaseAdmin.from("chaves_tse").update(payload).eq("id", row.id)
-      : await supabaseAdmin.from("chaves_tse").upsert(payload, { onConflict: "versao_chave,sigla_uf,tipo_eleicao,fase" });
-
-    if (error) return { sucesso: false, codigo: "ERRO_DB", erro: error.message, sha512_calculado: sha };
-    return {
-      sucesso: true,
+      sigla_uf: uf,
+      fase: data.fase,
+      tipo_eleicao: data.tipo_eleicao,
+      conteudo_hex: hex,
       sha512_calculado: sha,
-      conferido: Boolean(row?.hash_sha512_pub),
-      versao_chave: payload.versao_chave,
-    };
+      sha512_esperado: esperado,
+      confere,
+      origem: "upload",
+      arquivo_nome: data.arquivo_nome,
+      enviado_por: context.userId,
+      status: "pendente",
+    });
+    if (error) return { sucesso: false, codigo: "ERRO_DB", erro: error.message, sha512_calculado: sha };
+
+    return { sucesso: true, enfileirado: true, conferido: confere, sha512_calculado: sha };
   });
 
 const BuscaInput = z.object({
@@ -107,82 +94,63 @@ const BuscaInput = z.object({
   versoes_extra: z.array(z.string().min(3).max(20)).optional().default([]),
 });
 
-const VERSOES_CONHECIDAS: Record<number, string[]> = {
-  2020: ["20201028", "2020.1"],
-  2022: ["20220829", "20220920", "2022.1"],
-  2024: ["20240507", "20240902", "2024.1"],
-  2026: ["2026.1", "20260901"],
-};
-
 /**
- * Tenta baixar o .pub oficial do TSE em várias combinações de VERSAO/prefixo,
- * confere o SHA-512 contra o hash cadastrado e só então ativa a chave.
+ * Tenta baixar o .pub oficial do TSE, confere o SHA-512 contra o hash
+ * cadastrado e enfileira para aprovação manual (não ativa nada).
  */
 export const buscarChavePubOficial = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => BuscaInput.parse(i))
   .handler(async ({ data, context }) => {
     if (!(await assertMod(context))) return { sucesso: false, erro: "Acesso restrito." };
+    const { sha512Hex, toHex, baixarPub, urlPub, VERSOES_CONHECIDAS } = await import("./tse-pub.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const uf = data.sigla_uf.toUpperCase();
-    const prefixo = data.fase.toLowerCase(); // o | s | t
     const versoes = [...(VERSOES_CONHECIDAS[data.ano_eleicao] ?? []), ...data.versoes_extra];
     const tentativas: { url: string; resultado: string }[] = [];
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("chaves_tse")
-      .select("id, hash_sha512_pub, versao_chave")
+      .select("id, hash_sha512_pub")
       .eq("ano_eleicao", data.ano_eleicao)
       .eq("sigla_uf", uf)
       .eq("fase", data.fase)
       .eq("tipo_eleicao", data.tipo_eleicao)
       .maybeSingle();
+    const esperado = row?.hash_sha512_pub?.toLowerCase() ?? null;
 
     for (const versao of versoes) {
-      const url = `http://qrcodenobu.tse.jus.br/tse.qrcodebu/${versao}/${data.tipo_eleicao}/${prefixo}${uf.toLowerCase()}qrcode.pub`;
-      let bytes: Uint8Array | null = null;
-      try {
-        const r = await fetch(url, {
-          headers: { "User-Agent": "TotalizacaoParalela2026/1.0" },
-          signal: AbortSignal.timeout(8000),
-        });
-        if (!r.ok) { tentativas.push({ url, resultado: `HTTP ${r.status}` }); continue; }
-        bytes = new Uint8Array(await r.arrayBuffer());
-      } catch (e: any) {
-        tentativas.push({ url, resultado: `falha de rede: ${e.message}` });
-        continue;
-      }
-      if (bytes.length !== 32) { tentativas.push({ url, resultado: `${bytes.length} bytes (esperado 32)` }); continue; }
+      const url = urlPub(versao, data.tipo_eleicao, data.fase, uf);
+      const bytes = await baixarPub(url);
+      if (!bytes) { tentativas.push({ url, resultado: "indisponível ou tamanho inválido" }); continue; }
 
       const hex = toHex(bytes);
-      const sha = toHex(sha512(bytes));
-      if (row?.hash_sha512_pub && row.hash_sha512_pub.toLowerCase() !== sha) {
+      const sha = sha512Hex(bytes);
+      if (esperado && esperado !== sha) {
         tentativas.push({ url, resultado: "SHA-512 divergente do hash oficial" });
         continue;
       }
 
-      const payload = {
-        versao_chave: row?.versao_chave ?? versao,
-        sigla_uf: uf,
-        tipo_eleicao: data.tipo_eleicao,
-        fase: data.fase,
+      const { error } = await supabaseAdmin.from("chaves_pub_pendentes").insert({
         ano_eleicao: data.ano_eleicao,
-        chave_publica_hex: hex,
-        hash_sha512_pub: row?.hash_sha512_pub ?? sha,
-        arquivo_nome: `${prefixo}${uf.toLowerCase()}qrcode.pub`,
-        abrangencia: uf === "ZZ" ? "BR" : "UF",
+        sigla_uf: uf,
+        fase: data.fase,
+        tipo_eleicao: data.tipo_eleicao,
+        conteudo_hex: hex,
+        sha512_calculado: sha,
+        sha512_esperado: esperado,
+        confere: Boolean(esperado && esperado === sha),
+        origem: "tse",
         url_origem: url,
-        ativo: true,
-        ultima_sincronizacao: new Date().toISOString(),
-      };
-      const { error } = row
-        ? await supabaseAdmin.from("chaves_tse").update(payload).eq("id", row.id)
-        : await supabaseAdmin.from("chaves_tse").upsert(payload, { onConflict: "versao_chave,sigla_uf,tipo_eleicao,fase" });
+        arquivo_nome: `${data.fase.toLowerCase()}${uf.toLowerCase()}qrcode.pub`,
+        enviado_por: context.userId,
+        status: "pendente",
+      });
       if (error) { tentativas.push({ url, resultado: `erro DB: ${error.message}` }); continue; }
 
-      tentativas.push({ url, resultado: "OK" });
-      return { sucesso: true, url, sha512: sha, conferido: Boolean(row?.hash_sha512_pub), tentativas };
+      tentativas.push({ url, resultado: "OK — enfileirada para aprovação" });
+      return { sucesso: true, enfileirado: true, url, sha512: sha, conferido: Boolean(esperado), tentativas };
     }
 
     return {
@@ -191,4 +159,110 @@ export const buscarChavePubOficial = createServerFn({ method: "POST" })
       erro: "Nenhuma URL oficial respondeu com um .pub válido (o servidor do TSE só fica online no período eleitoral).",
       tentativas,
     };
+  });
+
+/** Fila de aprovação. */
+export const listarChavesPendentes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ status: z.enum(["pendente", "aprovada", "rejeitada"]).default("pendente") }).parse(i ?? {}))
+  .handler(async ({ data, context }) => {
+    if (!(await assertMod(context))) return { sucesso: false, itens: [] as any[], erro: "Acesso restrito." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: itens, error } = await supabaseAdmin
+      .from("chaves_pub_pendentes")
+      .select("id, ano_eleicao, sigla_uf, fase, tipo_eleicao, sha512_calculado, sha512_esperado, confere, origem, url_origem, arquivo_nome, status, motivo, created_at")
+      .eq("status", data.status)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) return { sucesso: false, itens: [], erro: error.message };
+    return { sucesso: true, itens: itens ?? [] };
+  });
+
+/** Aprova um item da fila e só então grava/ativa a chave em chaves_tse. */
+export const aprovarChavePendente = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    if (!(await assertMod(context))) return { sucesso: false, erro: "Acesso restrito." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: item } = await supabaseAdmin
+      .from("chaves_pub_pendentes")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!item) return { sucesso: false, erro: "Item não encontrado." };
+    if (item.status !== "pendente") return { sucesso: false, erro: `Item já ${item.status}.` };
+    if (item.sha512_esperado && !item.confere) {
+      return { sucesso: false, codigo: "HASH_DIVERGENTE", erro: "Aprovação bloqueada: SHA-512 diverge do hash oficial." };
+    }
+
+    const { data: row } = await supabaseAdmin
+      .from("chaves_tse")
+      .select("id, versao_chave, hash_sha512_pub")
+      .eq("ano_eleicao", item.ano_eleicao)
+      .eq("sigla_uf", item.sigla_uf)
+      .eq("fase", item.fase)
+      .eq("tipo_eleicao", item.tipo_eleicao)
+      .maybeSingle();
+
+    const payload = {
+      versao_chave: row?.versao_chave ?? `${item.ano_eleicao}.1`,
+      sigla_uf: item.sigla_uf,
+      tipo_eleicao: item.tipo_eleicao,
+      fase: item.fase,
+      ano_eleicao: item.ano_eleicao,
+      chave_publica_hex: item.conteudo_hex,
+      hash_sha512_pub: row?.hash_sha512_pub ?? item.sha512_calculado,
+      arquivo_nome: item.arquivo_nome,
+      url_origem: item.url_origem,
+      abrangencia: item.sigla_uf === "ZZ" ? "BR" : "UF",
+      ativo: true,
+      suspeita: false,
+      resultado_revalidacao: "ok",
+      ultima_revalidacao: new Date().toISOString(),
+      ultima_sincronizacao: new Date().toISOString(),
+    };
+
+    const { error } = row
+      ? await supabaseAdmin.from("chaves_tse").update(payload).eq("id", row.id)
+      : await supabaseAdmin.from("chaves_tse").upsert(payload, { onConflict: "versao_chave,sigla_uf,tipo_eleicao,fase" });
+    if (error) return { sucesso: false, codigo: "ERRO_DB", erro: error.message };
+
+    await supabaseAdmin
+      .from("chaves_pub_pendentes")
+      .update({ status: "aprovada", revisado_por: context.userId, revisado_em: new Date().toISOString() })
+      .eq("id", item.id);
+
+    return { sucesso: true, versao_chave: payload.versao_chave };
+  });
+
+export const rejeitarChavePendente = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid(), motivo: z.string().max(300).optional() }).parse(i))
+  .handler(async ({ data, context }) => {
+    if (!(await assertMod(context))) return { sucesso: false, erro: "Acesso restrito." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("chaves_pub_pendentes")
+      .update({
+        status: "rejeitada",
+        motivo: data.motivo ?? null,
+        revisado_por: context.userId,
+        revisado_em: new Date().toISOString(),
+      })
+      .eq("id", data.id)
+      .eq("status", "pendente");
+    if (error) return { sucesso: false, erro: error.message };
+    return { sucesso: true };
+  });
+
+/** Disparo manual da revalidação periódica. */
+export const revalidarChaves = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ baixar_do_tse: z.boolean().default(true) }).parse(i ?? {}))
+  .handler(async ({ data, context }) => {
+    if (!(await assertMod(context))) return { ok: false, erro: "Acesso restrito." };
+    const { revalidarChavesCore } = await import("./tse-pub.server");
+    return await revalidarChavesCore({ baixarDoTse: data.baixar_do_tse });
   });

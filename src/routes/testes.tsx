@@ -364,7 +364,7 @@ function SimulacaoApuracao({ bu }: { bu: any }) {
     (async () => {
       const { data } = await supabase.from("totais_cargo")
         .select("cargo_codigo,candidato_numero,total_votos,total_bus_computados")
-        .eq("ano_eleicao", bu.ano_eleicao).eq("sigla_uf", bu.uf)
+        .eq("ano_eleicao", bu.ano_eleicao).eq("sigla_uf", bu.uf).eq("modo_teste", true)
         .order("total_votos", { ascending: false }).limit(10);
       if (!cancel) setTotais(data ?? []);
     })();

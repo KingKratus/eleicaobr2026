@@ -95,7 +95,7 @@ function MapaPage() {
   const maxUf = Math.max(1, ...Object.values(porUf));
 
   function setModo(next: boolean) {
-    navigate({ search: next ? { teste: 1, ano: 2024 } : {}, replace: true });
+    navigate({ search: next ? { teste: 1 } : {}, replace: true });
   }
 
   return (

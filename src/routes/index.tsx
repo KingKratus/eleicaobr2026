@@ -33,8 +33,9 @@ function PainelPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("totais_cargo")
-        .select("*")
+        .select("id,candidato_numero,total_votos")
         .eq("ano_eleicao", 2026)
+        .eq("modo_teste", false)
         .eq("cargo_codigo", 1)
         .eq("num_turno", 1)
         .is("sigla_uf", null)

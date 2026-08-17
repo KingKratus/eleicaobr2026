@@ -335,8 +335,18 @@ export function ChavesPubPanel() {
           </button>
           <ul className="max-h-[420px] space-y-2 overflow-y-auto">
             {fila.map((p) => (
-
+              <li key={p.id} className="rounded-sm border border-border p-2 text-[10px]">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold">
+                    {p.ano_eleicao}/{p.sigla_uf}/{p.fase} · {p.tipo_eleicao}
+                  </span>
+                  <span className={p.confere ? "font-bold text-success" : "font-bold text-warning"}>
+                    {p.confere ? "SHA confere" : "sem referência oficial"}
+                  </span>
+                </div>
+                <div className="mt-1 break-all font-mono text-muted-foreground">
                   calc {p.sha512_calculado.slice(0, 40)}…
+
                 </div>
                 {p.sha512_esperado && (
                   <div className="break-all font-mono text-muted-foreground">esp. {p.sha512_esperado.slice(0, 40)}…</div>

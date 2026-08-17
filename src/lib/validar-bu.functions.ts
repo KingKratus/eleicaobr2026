@@ -78,7 +78,7 @@ export const validarBU = createServerFn({ method: "POST" })
       return { sucesso: false, codigo: "SEM_ASSINATURA", erro: "Último QR Code não contém o campo ASSI (assinatura).", etapas };
     }
 
-    const versao_chave = campos["VRCH"];
+    const versao_chave = campos["VRCH"] ?? "";
     const sigla_uf = (campos["UNFE"] ?? "BR").toUpperCase();
     const tipo_eleicao = campos["ORLC"] === "COM" ? "COMUNITARIA" : "LEGAL";
     const fase = campos["FASE"] ?? "O";
@@ -171,7 +171,7 @@ export const validarBU = createServerFn({ method: "POST" })
       conteudo_completo,
       hash_final,
       assinatura,
-      versao_chave,
+      versao_chave: versao_chave || chaveRow.versao_chave || String(ano_bu),
       assinatura_valida: true,
       status: "validado" as const,
       modo_teste,

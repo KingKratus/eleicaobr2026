@@ -188,6 +188,7 @@ export function parseQRs(qrs: string[]): ParsedBU {
       assinatura = (hashMatch[2] ?? "").toLowerCase();
     }
 
+    const cabMatch = qr.match(cabRe);
     const semCab = qr.replace(cabRe, "");
     const dados = semCab.replace(hashRe, "");
 
@@ -206,6 +207,9 @@ export function parseQRs(qrs: string[]): ParsedBU {
     qr_meta.push({ idx: i + 1, total, hash: hash_qr, hash_valido });
 
     conteudo_acumulado = proximo;
+    // Cabeçalho (QRBU/VRQR/VRCH) não entra no conteúdo hasheado, mas seus campos
+    // precisam ser preservados — VRCH identifica a versão da chave Ed25519.
+    if (cabMatch) Object.assign(campos, parseCampos(cabMatch[0]));
     Object.assign(campos, parseCampos(dados));
   }
 

@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicV1TotaisRouteImport } from './routes/api/public/v1/totais'
 import { Route as ApiPublicV1CoberturaRouteImport } from './routes/api/public/v1/cobertura'
 import { Route as ApiPublicHooksSyncChavesTseRouteImport } from './routes/api/public/hooks/sync-chaves-tse'
+import { Route as ApiPublicHooksRevalidarChavesRouteImport } from './routes/api/public/hooks/revalidar-chaves'
 import { Route as ApiPublicV1BoletinsIdRouteImport } from './routes/api/public/v1/boletins.$id'
 
 const TestesRoute = TestesRouteImport.update({
@@ -90,6 +91,12 @@ const ApiPublicHooksSyncChavesTseRoute =
     path: '/api/public/hooks/sync-chaves-tse',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRevalidarChavesRoute =
+  ApiPublicHooksRevalidarChavesRouteImport.update({
+    id: '/api/public/hooks/revalidar-chaves',
+    path: '/api/public/hooks/revalidar-chaves',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicV1BoletinsIdRoute = ApiPublicV1BoletinsIdRouteImport.update({
   id: '/api/public/v1/boletins/$id',
   path: '/api/public/v1/boletins/$id',
@@ -107,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/resultados': typeof ResultadosRoute
   '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
+  '/api/public/hooks/revalidar-chaves': typeof ApiPublicHooksRevalidarChavesRoute
   '/api/public/hooks/sync-chaves-tse': typeof ApiPublicHooksSyncChavesTseRoute
   '/api/public/v1/cobertura': typeof ApiPublicV1CoberturaRoute
   '/api/public/v1/totais': typeof ApiPublicV1TotaisRoute
@@ -123,6 +131,7 @@ export interface FileRoutesByTo {
   '/resultados': typeof ResultadosRoute
   '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
+  '/api/public/hooks/revalidar-chaves': typeof ApiPublicHooksRevalidarChavesRoute
   '/api/public/hooks/sync-chaves-tse': typeof ApiPublicHooksSyncChavesTseRoute
   '/api/public/v1/cobertura': typeof ApiPublicV1CoberturaRoute
   '/api/public/v1/totais': typeof ApiPublicV1TotaisRoute
@@ -140,6 +149,7 @@ export interface FileRoutesById {
   '/resultados': typeof ResultadosRoute
   '/sobre': typeof SobreRoute
   '/testes': typeof TestesRoute
+  '/api/public/hooks/revalidar-chaves': typeof ApiPublicHooksRevalidarChavesRoute
   '/api/public/hooks/sync-chaves-tse': typeof ApiPublicHooksSyncChavesTseRoute
   '/api/public/v1/cobertura': typeof ApiPublicV1CoberturaRoute
   '/api/public/v1/totais': typeof ApiPublicV1TotaisRoute
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/resultados'
     | '/sobre'
     | '/testes'
+    | '/api/public/hooks/revalidar-chaves'
     | '/api/public/hooks/sync-chaves-tse'
     | '/api/public/v1/cobertura'
     | '/api/public/v1/totais'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/resultados'
     | '/sobre'
     | '/testes'
+    | '/api/public/hooks/revalidar-chaves'
     | '/api/public/hooks/sync-chaves-tse'
     | '/api/public/v1/cobertura'
     | '/api/public/v1/totais'
@@ -190,6 +202,7 @@ export interface FileRouteTypes {
     | '/resultados'
     | '/sobre'
     | '/testes'
+    | '/api/public/hooks/revalidar-chaves'
     | '/api/public/hooks/sync-chaves-tse'
     | '/api/public/v1/cobertura'
     | '/api/public/v1/totais'
@@ -207,6 +220,7 @@ export interface RootRouteChildren {
   ResultadosRoute: typeof ResultadosRoute
   SobreRoute: typeof SobreRoute
   TestesRoute: typeof TestesRoute
+  ApiPublicHooksRevalidarChavesRoute: typeof ApiPublicHooksRevalidarChavesRoute
   ApiPublicHooksSyncChavesTseRoute: typeof ApiPublicHooksSyncChavesTseRoute
   ApiPublicV1CoberturaRoute: typeof ApiPublicV1CoberturaRoute
   ApiPublicV1TotaisRoute: typeof ApiPublicV1TotaisRoute
@@ -306,6 +320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSyncChavesTseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/revalidar-chaves': {
+      id: '/api/public/hooks/revalidar-chaves'
+      path: '/api/public/hooks/revalidar-chaves'
+      fullPath: '/api/public/hooks/revalidar-chaves'
+      preLoaderRoute: typeof ApiPublicHooksRevalidarChavesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/boletins/$id': {
       id: '/api/public/v1/boletins/$id'
       path: '/api/public/v1/boletins/$id'
@@ -327,6 +348,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResultadosRoute: ResultadosRoute,
   SobreRoute: SobreRoute,
   TestesRoute: TestesRoute,
+  ApiPublicHooksRevalidarChavesRoute: ApiPublicHooksRevalidarChavesRoute,
   ApiPublicHooksSyncChavesTseRoute: ApiPublicHooksSyncChavesTseRoute,
   ApiPublicV1CoberturaRoute: ApiPublicV1CoberturaRoute,
   ApiPublicV1TotaisRoute: ApiPublicV1TotaisRoute,

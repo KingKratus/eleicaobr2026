@@ -88,7 +88,7 @@ export const validarBU = createServerFn({ method: "POST" })
     // Localizamos a chave por ano_eleicao + UF + tipo + fase, que é a chave natural do TSE.
     const { data: chaveRow, error: chaveErr } = await supabaseAdmin
       .from("chaves_tse")
-      .select("chave_publica_hex, hash_sha512_pub, versao_chave, arquivo_nome")
+      .select("chave_publica_hex, hash_sha512_pub, versao_chave, arquivo_nome, suspeita, resultado_revalidacao")
       .eq("ano_eleicao", ano_bu)
       .eq("sigla_uf", sigla_uf)
       .eq("tipo_eleicao", tipo_eleicao)
@@ -104,7 +104,12 @@ export const validarBU = createServerFn({ method: "POST" })
       log("err", "Chave pública TSE pendente (apenas hash SHA-512 cadastrado).");
       return { sucesso: false, codigo: "CHAVE_PENDENTE", erro: `Apenas o hash SHA-512 desta chave está cadastrado. Faça upload do arquivo .pub correspondente no painel admin para habilitar a validação.`, etapas };
     }
+    if (chaveRow.suspeita) {
+      log("err", "Chave marcada como suspeita na última revalidação.");
+      return { sucesso: false, codigo: "CHAVE_SUSPEITA", erro: "A chave pública desta UF/ano foi marcada como suspeita na revalidação periódica (divergência de SHA-512). Validação bloqueada até revisão do administrador.", etapas };
+    }
     log("ok", "Chave pública encontrada.");
+
 
     let assinatura_valida = false;
     try {

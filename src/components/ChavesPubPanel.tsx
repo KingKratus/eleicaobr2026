@@ -228,7 +228,26 @@ export function ChavesPubPanel() {
     invalidar();
   }
 
+  async function aprovarTodasConferidas() {
+    const alvos = (fila ?? []).filter((p) => p.confere);
+    if (!alvos.length) return;
+    if (!window.confirm(`Aprovar e ativar ${alvos.length} chave(s) com SHA-512 conferido?`)) return;
+    setBusy(true);
+    let ok = 0, fail = 0;
+    for (const p of alvos) {
+      try {
+        const r: any = await aprovar({ data: { id: p.id } });
+        if (r.sucesso) { ok++; log("ok", `${p.ano_eleicao}/${p.sigla_uf}/${p.fase} ativada.`); }
+        else { fail++; log("err", `${p.ano_eleicao}/${p.sigla_uf}/${p.fase}: ${r.erro}`); }
+      } catch (e: any) { fail++; log("err", `${p.ano_eleicao}/${p.sigla_uf}/${p.fase}: ${e.message}`); }
+    }
+    setBusy(false);
+    toast[fail && !ok ? "error" : "success"](`Aprovação em lote: ${ok} ativada(s), ${fail} falha(s).`);
+    invalidar();
+  }
+
   async function rejeitarItem(id: string) {
+
     const motivo = window.prompt("Motivo da rejeição (opcional):") ?? undefined;
     setBusy(true);
     try {

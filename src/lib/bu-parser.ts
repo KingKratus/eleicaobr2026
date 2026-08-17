@@ -188,6 +188,7 @@ export function parseQRs(qrs: string[]): ParsedBU {
       assinatura = (hashMatch[2] ?? "").toLowerCase();
     }
 
+    const cabMatch = qr.match(cabRe);
     const semCab = qr.replace(cabRe, "");
     const dados = semCab.replace(hashRe, "");
 

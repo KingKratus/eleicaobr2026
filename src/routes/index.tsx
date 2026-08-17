@@ -50,7 +50,7 @@ function PainelPage() {
     queryFn: async () => {
       const [{ count: bus }, { count: cob }, { count: vol }] = await Promise.all([
         supabase.from("boletins").select("id", { count: "exact", head: true }).eq("status", "validado").eq("modo_teste", false),
-        supabase.from("cobertura").select("id", { count: "exact", head: true }),
+        supabase.from("cobertura").select("id", { count: "exact", head: true }).eq("modo_teste", false),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
       ]);
       return { bus: bus ?? 0, cob: cob ?? 0, vol: vol ?? 0 };

@@ -1,90 +1,47 @@
-## Escopo
+# Revalidação periódica + aprovação manual de chaves TSE
 
-Vou tratar tudo do pedido em um único ciclo, dividido por área. Nada destrutivo nos dados existentes.
+## O que os arquivos enviados contêm
 
----
+Os quatro anexos (2022 e 2024, em .txt e .zip) trazem **apenas as listas de hashes SHA-512** dos arquivos `.pub` — não os arquivos `.pub` em si.
 
-### 1. Chaves TSE 2020/2022/2024/2026 — sincronização & UI
+Comparei linha a linha com o banco: **140 de 140 hashes já estão gravados e idênticos** (2022 fases O/S, 2024 fases O/S/T, 28 UFs cada). Nada ficou pendente do lado dos hashes.
 
-**Bug atual:** o cron diário só varre 2024/ano-atual/próximo. 2020 e 2022 nunca entram. Além disso a UI do admin só permite digitar um VRCH por vez.
+O que continua faltando são os binários `.pub` de 32 bytes: hoje só 10 registros (2022, fase O) têm chave pública gravada; os outros 131 estão "pendente (só hash)". Esses arquivos só entram por upload ou pela URL oficial do TSE.
 
-- Estender `src/routes/api/public/hooks/sync-chaves-tse.ts` para varrer também 2020 e 2022 (lista fixa de VRCHs conhecidos + heurística por ano), gravando `ano_eleicao` correto.
-- Adicionar botão **"Buscar chaves 2020/2022/2024/2026 do TSE"** no painel admin (`src/routes/admin.tsx`) que dispara `fetch('/api/public/hooks/sync-chaves-tse', { method: 'POST' })` e mostra contagem por ano.
-- Manter o formulário manual existente (VRCH + UF + lote).
-- Mostrar agrupamento por ano no listão de chaves.
+## O que será construído
 
-### 2. Painel de moderação — bugs
+### 1. Fila de aprovação manual
 
-- Verificar carregamento dos BUs (a policy RLS já cobre admin; o sintoma "não funciona" vem do botão Auditor IA só aparecer quando `status === 'validado'` e de erros silenciosos). Adicionar:
-  - Estado vazio explícito ("Nenhum BU recebido ainda").
-  - Filtro por status (todos/pendente/validado/rejeitado).
-  - Botões **aprovar/rejeitar manualmente** (chama UPDATE via supabase) — usa policy `Moderador/admin pode atualizar status` que já existe.
-  - Toast de erro real em vez de falha silenciosa.
-- Confirmar que o gate de acesso já inclui admin (já inclui — `r.role === 'moderador' || 'admin'`); manter.
+Nenhuma chave passa a valer automaticamente. Todo `.pub` — vindo de upload ou baixado da URL do TSE — entra numa fila de revisão com:
 
-### 3. Modo teste — simulação até a interface de apuração
+- SHA-512 calculado do arquivo
+- SHA-512 oficial cadastrado e o veredito da conferência (confere / diverge / sem referência)
+- origem (upload manual com nome do arquivo, ou URL do TSE usada)
+- quem enviou e quando
 
-- Em `src/routes/testes.tsx`, adicionar seção **"5 · Simulação de fluxo"** que após um BU teste ser validado mostra:
-  - Mini-painel "Entrando na apuração" com animação dos votos somando aos totais de teste (consulta `totais_cargo` filtrando `modo_teste`/visualização local).
-  - Link "Ver em /resultados (modo teste)" preservando a flag.
-- Permitir **salvar BUs de teste reutilizáveis**: nova tabela `bus_teste_salvos` (admin-only RLS) e botão "Salvar este BU" + dropdown "Carregar BU salvo" no Lab.
+Na tela do admin, cada item da fila tem **Aprovar** ou **Rejeitar** (com motivo). Só ao aprovar a chave é gravada em `chaves_tse` e ativada. Itens com SHA divergente ficam bloqueados para aprovação.
 
-### 4. Ancoragem descentralizada — gateways de verificação
+### 2. Revalidação periódica
 
-- **IPFS:** após calcular o CID, mostrar 3 gateways clicáveis para verificação real:
-  - `https://ipfs.io/ipfs/{cid}`, `https://cloudflare-ipfs.com/ipfs/{cid}`, `https://w3s.link/ipfs/{cid}`
-  - Adicionar botão **"Publicar no IPFS (web3.storage)"** opcional via API pública (`https://api.web3.storage`) — exige token do usuário, com fallback explicando que o CID determinístico já permite verificação se o conteúdo for republicado.
-- **Nostr (bug real):** o `Relay.connect` de `nostr-tools` falha em vários browsers por causa de WebSocket sync e o `Promise.all` engole erros. Corrigir:
-  - Aumentar timeout, aguardar `relay.publish()` de fato (Promise que resolve quando o relay confirma), capturar erros individuais e devolver para a UI.
-  - Adicionar relays adicionais (`wss://relay.primal.net`, `wss://nostr.wine`).
-  - Mostrar links de verificação em múltiplos gateways: `njump.me`, `nostr.com/e/`, `primal.net/e/`.
-  - Adicionar gateway HTTP de leitura (`https://api.nostr.band/v0/event/{id}`) com botão "Verificar agora".
+Rotina diária que, para cada chave já ativa:
 
-### 5. Documentação de API no admin (export PDF/CSV)
+- recalcula o SHA-512 da chave gravada e compara com o hash oficial;
+- quando o servidor do TSE responde, rebaixa o `.pub` e compara byte a byte com o que está no banco.
 
-Nova aba **"API"** no admin (`src/routes/admin.tsx` com seção colapsável ou nova rota `/admin/api`):
-- Lista de endpoints documentados (path, método, auth, payload, response):
-  - `POST /api/public/hooks/sync-chaves-tse` — sincroniza chaves
-  - Server functions: `validarBU`, `importarChaveTSE`, `auditarBU`
-  - Endpoints REST sugeridos novos (criar): `GET /api/public/v1/totais`, `GET /api/public/v1/cobertura`, `GET /api/public/v1/boletins/:id` (read-only, sem PII)
-- Botões **Exportar PDF** (via `jspdf`) e **Exportar CSV** da spec.
+Resultados possíveis: `ok`, `divergente`, `indisponivel`. Divergências marcam a chave como suspeita (deixa de ser usada na validação de BUs até revisão) e viram um registro no histórico de revalidação.
 
-### 6. Terminal de execução do BU
+### 3. Painel
 
-Componente `<BuTerminal>` no Lab e na captura: painel preto estilo console que mostra em tempo real as etapas:
-```
-> parseQRs ... OK (3 QRs, 12 cargos)
-> validar chave VRCH=2026.1/SP/O ... OK
-> verificar assinatura Ed25519 ... OK
-> calcular hash SHA-512 ... OK (abc123...)
-> inserir em boletins ... OK (id=...)
-> agregar totais ... OK
-```
-Implementar como log push (`useState<string[]>`) alimentado pelas etapas reais de `validarBU` (devolver `etapas[]` no resultado) + ancoragem.
+No `/admin`, junto ao painel de chaves:
 
-### 7. Bugs adicionais
+- aba **Fila de aprovação** com contador de itens pendentes;
+- coluna de saúde no diagnóstico por UF: última revalidação, resultado e alerta vermelho para divergência;
+- botão "Revalidar agora" com log no terminal já existente.
 
-- **Mapa Leaflet crash (`_leaflet_pos`)**: ocorre por re-mount durante navegação. Adicionar `key` estável e cleanup no `useEffect` do `BrazilMap.tsx`.
-- Garantir que o `sync-chaves-tse` lida com 404 silencioso (não polui a UI).
+## Detalhes técnicos
 
----
-
-## Detalhamento técnico
-
-- Migração nova: `bus_teste_salvos` (id, user_id, nome, qrs jsonb, created_at) + RLS admin-only + GRANTs.
-- Nenhuma alteração em policies existentes.
-- Sem novos secrets obrigatórios.
-- Sem alteração de auth ou estrutura de rotas autenticadas.
-
-## Arquivos afetados
-
-- `src/routes/admin.tsx` (chaves multi-ano, moderação melhorada, API docs, exports)
-- `src/routes/testes.tsx` (simulação, BUs salvos, terminal, gateways)
-- `src/routes/api/public/hooks/sync-chaves-tse.ts` (2020/2022)
-- `src/routes/api/public/v1/*.ts` (novos endpoints read-only)
-- `src/lib/decentralized-anchor.ts` (Nostr robusto + IPFS gateways)
-- `src/components/BuTerminal.tsx` (novo)
-- `src/components/BrazilMap.tsx` (fix re-mount)
-- `src/lib/validar-bu.functions.ts` (devolver `etapas[]`)
-- Migração SQL: tabela `bus_teste_salvos`.
-- Deps: `jspdf` para export PDF.
+- Migração: tabela `chaves_pub_pendentes` (id, ano, uf, fase, tipo, conteudo_hex, sha512_calculado, sha512_esperado, confere, origem, url_origem, arquivo_nome, enviado_por, status pendente/aprovada/rejeitada, motivo, timestamps) e tabela `chaves_revalidacao` (chave_id, executado_em, resultado, detalhe). Em `chaves_tse`: `ultima_revalidacao`, `resultado_revalidacao`, `suspeita boolean default false`. GRANTs + RLS: leitura/escrita só para admin/moderador via `has_role`; `service_role` para a rotina.
+- `src/lib/tse-pub.functions.ts`: `uploadChavePub` e `buscarChavePubOficial` passam a inserir na fila em vez de ativar. Novas funções `listarChavesPendentes`, `aprovarChavePendente`, `rejeitarChavePendente` (todas com `requireSupabaseAuth` + checagem de papel), e `revalidarChaves` para o disparo manual.
+- Nova rota `src/routes/api/public/hooks/revalidar-chaves.ts` (POST, protegida por segredo no header) executando a varredura; agendada por `pg_cron` uma vez por dia.
+- `src/lib/validar-bu.functions.ts`: ignora chaves com `suspeita = true`, retornando código `CHAVE_SUSPEITA`.
+- `src/components/ChavesPubPanel.tsx`: fila de aprovação, coluna de saúde e botão de revalidação.

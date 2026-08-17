@@ -365,7 +365,9 @@ export function ChavesPubPanel() {
               </li>
             ))}
           </ul>
+          </>
         )}
+
       </div>
 
       <BuTerminal lines={terminal} running={busy} title="chaves-pub" />

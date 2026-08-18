@@ -493,6 +493,64 @@ export type Database = {
           bus: number
         }[]
       }
+      bu_publico_detalhe: {
+        Args: { _id: string }
+        Returns: {
+          ano_eleicao: number
+          assinatura: string
+          assinatura_valida: boolean
+          blockchain_explorer_url: string
+          blockchain_tx: string
+          comparecimento: number
+          created_at: string
+          eleitores_aptos: number
+          eleitores_faltosos: number
+          fase: string
+          hash_final: string
+          id: string
+          id_carga: string
+          modo_teste: boolean
+          municipio_nome: string
+          municipio_num: number
+          num_turno: number
+          secao: number
+          sigla_uf: string
+          status: string
+          versao_chave: string
+          versao_software: string
+          votos: Json
+          zona: number
+        }[]
+      }
+      bus_publicos: {
+        Args: {
+          _ano: number
+          _mun: number
+          _teste: boolean
+          _turno: number
+          _uf: string
+        }
+        Returns: {
+          assinatura_valida: boolean
+          blockchain_explorer_url: string
+          blockchain_tx: string
+          comparecimento: number
+          created_at: string
+          eleitores_aptos: number
+          fase: string
+          hash_final: string
+          id: string
+          modo_teste: boolean
+          municipio_nome: string
+          municipio_num: number
+          num_turno: number
+          secao: number
+          sigla_uf: string
+          status: string
+          versao_chave: string
+          zona: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -500,8 +558,49 @@ export type Database = {
         }
         Returns: boolean
       }
+      insights_participacao: {
+        Args: { _ano: number; _teste: boolean; _turno: number; _uf: string }
+        Returns: {
+          aptos: number
+          bus: number
+          comparecimento: number
+          faltosos: number
+        }[]
+      }
+      insights_regiao: {
+        Args: { _ano: number; _teste: boolean; _turno: number }
+        Returns: {
+          bus: number
+          municipios: number
+          regiao: string
+          ufs: number
+        }[]
+      }
+      insights_timeline: {
+        Args: { _ano: number; _teste: boolean; _turno: number }
+        Returns: {
+          bucket: string
+          bus: number
+        }[]
+      }
+      mapa_mun_turno: {
+        Args: { _ano: number; _teste: boolean; _turno: number; _uf: string }
+        Returns: {
+          bus: number
+          municipio_nome: string
+          municipio_num: number
+        }[]
+      }
       mapa_uf: {
         Args: { _ano: number; _teste?: boolean }
+        Returns: {
+          bus: number
+          municipios: number
+          uf: string
+        }[]
+      }
+      mapa_uf_turno: {
+        Args: { _ano: number; _teste: boolean; _turno: number }
         Returns: {
           bus: number
           municipios: number

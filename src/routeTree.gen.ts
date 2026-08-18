@@ -16,6 +16,7 @@ import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as MeusBusRouteImport } from './routes/meus-bus'
 import { Route as MapaRouteImport } from './routes/mapa'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as CapturarRouteImport } from './routes/capturar'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -58,6 +59,11 @@ const MapaRoute = MapaRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CapturarRoute = CapturarRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/capturar': typeof CapturarRoute
+  '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
   '/meus-bus': typeof MeusBusRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/capturar': typeof CapturarRoute
+  '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
   '/meus-bus': typeof MeusBusRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/capturar': typeof CapturarRoute
+  '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
   '/meus-bus': typeof MeusBusRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/capturar'
+    | '/insights'
     | '/login'
     | '/mapa'
     | '/meus-bus'
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/capturar'
+    | '/insights'
     | '/login'
     | '/mapa'
     | '/meus-bus'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/capturar'
+    | '/insights'
     | '/login'
     | '/mapa'
     | '/meus-bus'
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   CapturarRoute: typeof CapturarRoute
+  InsightsRoute: typeof InsightsRoute
   LoginRoute: typeof LoginRoute
   MapaRoute: typeof MapaRoute
   MeusBusRoute: typeof MeusBusRoute
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/capturar': {
       id: '/capturar'
       path: '/capturar'
@@ -341,6 +361,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   CapturarRoute: CapturarRoute,
+  InsightsRoute: InsightsRoute,
   LoginRoute: LoginRoute,
   MapaRoute: MapaRoute,
   MeusBusRoute: MeusBusRoute,

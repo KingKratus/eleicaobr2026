@@ -2,16 +2,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { BusPanel } from "@/components/BusPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { UFS } from "@/lib/cargos";
 
-type Search = { teste?: number; ano?: number };
+type Search = { teste?: number; ano?: number; turno?: number };
 
 export const Route = createFileRoute("/mapa")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     teste: s.teste ? 1 : undefined,
     ano: s.ano ? Number(s.ano) : undefined,
+    turno: Number(s.turno) === 2 ? 2 : undefined,
   }),
+
   head: () => ({
     meta: [
       { title: "Mapa de Cobertura · Totalização Paralela 2026" },

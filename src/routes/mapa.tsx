@@ -56,17 +56,18 @@ function MapaPage() {
   ).sort((a, b) => b - a);
 
   const ano = search.ano ?? (teste ? Number(anosDisp[0]?.ano ?? 2024) : 2026);
+  const turno = search.turno === 2 ? 2 : 1;
 
   const [ufSelecionada, setUfSelecionada] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-  useEffect(() => { setUfSelecionada(null); }, [teste, ano]);
+  useEffect(() => { setUfSelecionada(null); }, [teste, ano, turno]);
 
   // Payload mínimo: 1 linha por UF (~27 linhas, 3 colunas) via RPC agregadora.
   const { data: ufs = [] } = useQuery({
-    queryKey: ["mapa-uf", ano, teste],
+    queryKey: ["mapa-uf", ano, teste, turno],
     queryFn: async () => {
-      const { data } = await (supabase as any).rpc("mapa_uf", { _ano: ano, _teste: teste });
+      const { data } = await (supabase as any).rpc("mapa_uf_turno", { _ano: ano, _turno: turno, _teste: teste });
       return (data ?? []) as UfRow[];
     },
     staleTime: 30_000,
@@ -75,21 +76,22 @@ function MapaPage() {
 
   // Municípios só são buscados quando o usuário abre uma UF.
   const { data: municipios = [], isFetching: carregandoMun } = useQuery({
-    queryKey: ["mapa-mun", ano, teste, ufSelecionada],
+    queryKey: ["mapa-mun", ano, teste, turno, ufSelecionada],
     enabled: !!ufSelecionada,
     staleTime: 30_000,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("cobertura")
-        .select("municipio_num,municipio_nome,total_bus_validados")
-        .eq("ano_eleicao", ano)
-        .eq("modo_teste", teste)
-        .eq("sigla_uf", ufSelecionada!)
-        .order("total_bus_validados", { ascending: false })
-        .limit(50);
-      return (data ?? []) as MunRow[];
+      const { data } = await (supabase as any).rpc("mapa_mun_turno", {
+        _ano: ano, _turno: turno, _teste: teste, _uf: ufSelecionada,
+      });
+      return ((data ?? []) as { municipio_num: number; municipio_nome: string | null; bus: number }[]).map((m) => ({
+        municipio_num: m.municipio_num,
+        municipio_nome: m.municipio_nome,
+        total_bus_validados: Number(m.bus),
+      })) as MunRow[];
     },
   });
+
+
 
   const porUf: Record<string, number> = {};
   ufs.forEach((r) => { porUf[r.uf] = Number(r.bus); });

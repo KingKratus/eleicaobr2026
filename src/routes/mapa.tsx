@@ -59,9 +59,11 @@ function MapaPage() {
   const turno = search.turno === 2 ? 2 : 1;
 
   const [ufSelecionada, setUfSelecionada] = useState<string | null>(null);
+  const [munSel, setMunSel] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-  useEffect(() => { setUfSelecionada(null); }, [teste, ano, turno]);
+  useEffect(() => { setUfSelecionada(null); setMunSel(null); }, [teste, ano, turno]);
+
 
   // Payload mínimo: 1 linha por UF (~27 linhas, 3 colunas) via RPC agregadora.
   const { data: ufs = [] } = useQuery({

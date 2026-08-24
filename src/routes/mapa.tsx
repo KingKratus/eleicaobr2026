@@ -63,6 +63,8 @@ function MapaPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setUfSelecionada(null); setMunSel(null); }, [teste, ano, turno]);
+  useEffect(() => { setMunSel(null); }, [ufSelecionada]);
+
 
 
   // Payload mínimo: 1 linha por UF (~27 linhas, 3 colunas) via RPC agregadora.

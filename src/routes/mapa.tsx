@@ -209,7 +209,7 @@ function MapaPage() {
         <section className="border-t border-border px-4 py-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-mono-label">{ufSelecionada} · municípios</h2>
-            <button onClick={() => setUfSelecionada(null)} className="text-[10px] font-bold uppercase text-muted-foreground">
+            <button onClick={() => { setUfSelecionada(null); setMunSel(null); }} className="text-[10px] font-bold uppercase text-muted-foreground">
               Limpar
             </button>
           </div>
@@ -220,20 +220,30 @@ function MapaPage() {
           ) : (
             <ul className="divide-y divide-border rounded-sm border border-border">
               {municipios.map((m) => (
-                <li key={m.municipio_num} className="flex items-center justify-between px-3 py-2 text-xs">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{m.municipio_nome ?? `Município ${m.municipio_num}`}</p>
-                    <p className="font-mono text-[9px] text-muted-foreground">cód. {m.municipio_num}</p>
-                  </div>
-                  <span className="ml-3 shrink-0 rounded-sm bg-secondary px-2 py-0.5 font-mono text-[10px] font-bold">
-                    {m.total_bus_validados} BU{m.total_bus_validados === 1 ? "" : "s"}
-                  </span>
+                <li key={m.municipio_num}>
+                  <button
+                    onClick={() => setMunSel(munSel === m.municipio_num ? null : m.municipio_num)}
+                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs transition-colors ${munSel === m.municipio_num ? "bg-accent/10" : "hover:bg-accent/5"}`}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{m.municipio_nome ?? `Município ${m.municipio_num}`}</p>
+                      <p className="font-mono text-[9px] text-muted-foreground">cód. {m.municipio_num}</p>
+                    </div>
+                    <span className="ml-3 shrink-0 rounded-sm bg-secondary px-2 py-0.5 font-mono text-[10px] font-bold">
+                      {m.total_bus_validados} BU{m.total_bus_validados === 1 ? "" : "s"}
+                    </span>
+                  </button>
                 </li>
               ))}
             </ul>
           )}
+
+          <div className="mt-5">
+            <BusPanel ano={ano} turno={turno} teste={teste} uf={ufSelecionada} municipio={munSel} />
+          </div>
         </section>
       )}
+
     </AppShell>
   );
 }

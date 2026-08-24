@@ -100,7 +100,7 @@ function MapaPage() {
   const maxUf = Math.max(1, ...Object.values(porUf));
 
   function setModo(next: boolean) {
-    navigate({ search: next ? { teste: 1 } : {}, replace: true });
+    navigate({ search: next ? { teste: 1, turno: turno === 2 ? 2 : undefined } : { turno: turno === 2 ? 2 : undefined }, replace: true });
   }
 
   return (
@@ -129,13 +129,29 @@ function MapaPage() {
           {teste && (
             <select
               value={ano}
-              onChange={(e) => navigate({ search: { teste: 1, ano: Number(e.target.value) }, replace: true })}
+              onChange={(e) => navigate({ search: { teste: 1, ano: Number(e.target.value), turno: turno === 2 ? 2 : undefined }, replace: true })}
               className="rounded-sm border border-border bg-background px-2 text-[11px]"
             >
               {anosOpcoes.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
           )}
         </div>
+
+        <div className="mt-2 flex gap-1.5">
+          {[1, 2].map((t) => (
+            <button
+              key={t}
+              onClick={() => navigate({
+                search: { teste: teste ? 1 : undefined, ano: search.ano, turno: t === 2 ? 2 : undefined },
+                replace: true,
+              })}
+              className={`flex-1 rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide ${turno === t ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+            >
+              {t}º turno
+            </button>
+          ))}
+        </div>
+
 
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <Metric label="UFs ativas" value={ufs.length} />

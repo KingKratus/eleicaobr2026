@@ -1,11 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, BarChart3, Map, User, ScanLine } from "lucide-react";
+import { LayoutDashboard, BarChart3, LineChart, Map, ScanLine } from "lucide-react";
 
 const items = [
   { to: "/", label: "Painel", icon: LayoutDashboard },
   { to: "/resultados", label: "Resultados", icon: BarChart3 },
   { to: "/mapa", label: "Mapa", icon: Map },
-  { to: "/perfil", label: "Perfil", icon: User },
+  { to: "/insights", label: "Insights", icon: LineChart },
 ] as const;
 
 export function BottomNav() {

@@ -59,9 +59,13 @@ function MapaPage() {
   const turno = search.turno === 2 ? 2 : 1;
 
   const [ufSelecionada, setUfSelecionada] = useState<string | null>(null);
+  const [munSel, setMunSel] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-  useEffect(() => { setUfSelecionada(null); }, [teste, ano, turno]);
+  useEffect(() => { setUfSelecionada(null); setMunSel(null); }, [teste, ano, turno]);
+  useEffect(() => { setMunSel(null); }, [ufSelecionada]);
+
+
 
   // Payload mínimo: 1 linha por UF (~27 linhas, 3 colunas) via RPC agregadora.
   const { data: ufs = [] } = useQuery({
@@ -100,7 +104,7 @@ function MapaPage() {
   const maxUf = Math.max(1, ...Object.values(porUf));
 
   function setModo(next: boolean) {
-    navigate({ search: next ? { teste: 1 } : {}, replace: true });
+    navigate({ search: next ? { teste: 1, turno: turno === 2 ? 2 : undefined } : { turno: turno === 2 ? 2 : undefined }, replace: true });
   }
 
   return (
@@ -129,13 +133,29 @@ function MapaPage() {
           {teste && (
             <select
               value={ano}
-              onChange={(e) => navigate({ search: { teste: 1, ano: Number(e.target.value) }, replace: true })}
+              onChange={(e) => navigate({ search: { teste: 1, ano: Number(e.target.value), turno: turno === 2 ? 2 : undefined }, replace: true })}
               className="rounded-sm border border-border bg-background px-2 text-[11px]"
             >
               {anosOpcoes.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
           )}
         </div>
+
+        <div className="mt-2 flex gap-1.5">
+          {[1, 2].map((t) => (
+            <button
+              key={t}
+              onClick={() => navigate({
+                search: { teste: teste ? 1 : undefined, ano: search.ano, turno: t === 2 ? 2 : undefined },
+                replace: true,
+              })}
+              className={`flex-1 rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide ${turno === t ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+            >
+              {t}º turno
+            </button>
+          ))}
+        </div>
+
 
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <Metric label="UFs ativas" value={ufs.length} />
@@ -193,7 +213,7 @@ function MapaPage() {
         <section className="border-t border-border px-4 py-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-mono-label">{ufSelecionada} · municípios</h2>
-            <button onClick={() => setUfSelecionada(null)} className="text-[10px] font-bold uppercase text-muted-foreground">
+            <button onClick={() => { setUfSelecionada(null); setMunSel(null); }} className="text-[10px] font-bold uppercase text-muted-foreground">
               Limpar
             </button>
           </div>
@@ -204,20 +224,30 @@ function MapaPage() {
           ) : (
             <ul className="divide-y divide-border rounded-sm border border-border">
               {municipios.map((m) => (
-                <li key={m.municipio_num} className="flex items-center justify-between px-3 py-2 text-xs">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{m.municipio_nome ?? `Município ${m.municipio_num}`}</p>
-                    <p className="font-mono text-[9px] text-muted-foreground">cód. {m.municipio_num}</p>
-                  </div>
-                  <span className="ml-3 shrink-0 rounded-sm bg-secondary px-2 py-0.5 font-mono text-[10px] font-bold">
-                    {m.total_bus_validados} BU{m.total_bus_validados === 1 ? "" : "s"}
-                  </span>
+                <li key={m.municipio_num}>
+                  <button
+                    onClick={() => setMunSel(munSel === m.municipio_num ? null : m.municipio_num)}
+                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs transition-colors ${munSel === m.municipio_num ? "bg-accent/10" : "hover:bg-accent/5"}`}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{m.municipio_nome ?? `Município ${m.municipio_num}`}</p>
+                      <p className="font-mono text-[9px] text-muted-foreground">cód. {m.municipio_num}</p>
+                    </div>
+                    <span className="ml-3 shrink-0 rounded-sm bg-secondary px-2 py-0.5 font-mono text-[10px] font-bold">
+                      {m.total_bus_validados} BU{m.total_bus_validados === 1 ? "" : "s"}
+                    </span>
+                  </button>
                 </li>
               ))}
             </ul>
           )}
+
+          <div className="mt-5">
+            <BusPanel ano={ano} turno={turno} teste={teste} uf={ufSelecionada} municipio={munSel} />
+          </div>
         </section>
       )}
+
     </AppShell>
   );
 }

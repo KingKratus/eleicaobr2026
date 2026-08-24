@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Menu, X, LayoutDashboard, BarChart3, Map, User, ScanLine, Shield, FlaskConical, Info, LogOut } from "lucide-react";
+import { Menu, X, LayoutDashboard, BarChart3, LineChart, Map, User, ScanLine, Shield, FlaskConical, Info, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 const baseItems = [
   { to: "/", label: "Painel", icon: LayoutDashboard },
   { to: "/resultados", label: "Resultados", icon: BarChart3 },
+  { to: "/insights", label: "Insights", icon: LineChart },
   { to: "/mapa", label: "Mapa", icon: Map },
   { to: "/capturar", label: "Capturar BU", icon: ScanLine },
   { to: "/meus-bus", label: "Meus BUs", icon: ScanLine },

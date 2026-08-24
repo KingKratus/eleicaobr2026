@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { BusPanel } from "@/components/BusPanel";
+
 import { supabase } from "@/integrations/supabase/client";
 import { CARGOS, UFS } from "@/lib/cargos";
 
@@ -179,6 +181,11 @@ function ResultadosPage() {
           </div>
         )}
       </section>
+
+      <section className="border-t border-border px-4 py-5">
+        <BusPanel ano={ano} turno={turno} teste={teste} uf={uf || null} municipio={municipio ? Number(municipio) : null} />
+      </section>
     </AppShell>
   );
 }
+

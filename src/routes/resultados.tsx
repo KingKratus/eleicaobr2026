@@ -179,6 +179,11 @@ function ResultadosPage() {
           </div>
         )}
       </section>
+
+      <section className="border-t border-border px-4 py-5">
+        <BusPanel ano={ano} turno={turno} teste={teste} uf={uf || null} municipio={municipio ? Number(municipio) : null} />
+      </section>
     </AppShell>
   );
 }
+
